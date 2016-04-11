@@ -26,7 +26,26 @@ object Tt {
 
 
 case class Person(name: String, age: Int)
+case class Token(id: String)
 
-object Person extends MongoDSL[Person] { val person = meta[Person]
-  where(person.name gt "tim")
+object Person extends MongoDSL { //val person = meta[Person]
+
+  val person = new Make[Person] {
+    val name = Field[Person, String]("name")
+    val age = Field[Person, Int]("age")
+  }
+
+  val token = new Make[Token] {
+    val name = Field[Token, String]("name")
+    val age = Field[Token, Int]("age")
+  }
+
+  from(person){ s =>
+    where(s.name > "tim" and s.age > 23 and s.name === "tim" or s.age < 12) select s
+  }
+
+  find(token.name === "tim")
+
+  findOne(token.name === "tim")
+
 }

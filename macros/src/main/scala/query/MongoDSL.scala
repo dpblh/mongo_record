@@ -6,9 +6,28 @@ import scala.language.experimental.macros
 /**
  * Created by tim on 08.04.16.
  */
-trait MongoDSL[T] {
+trait MongoDSL {
 
-  def where(finder: T => Expression) = ???
+  /**
+   * просто карринг. для установки базового типа
+   * @param c
+   * @param c1
+   * @tparam T Collection type
+   * @return
+   */
+  def from[T <: Make[_]](c: T)(c1: T => Result[T]):Result[T] = c1(c)
+
+  def find[T <: Make[_]](exp: Expression[_]) = Predicate(exp).select()
+
+  def findOne[T <: Make[_]](exp: Expression[_]) = Predicate(exp).select()
+
+  /**
+   * predicate builder
+   * @param c
+   * @tparam F field type
+   * @return
+   */
+  def where[F](c: Expression[F]):Predicate[F] = Predicate(c)
 
 }
 object MongoDSL extends UtilsMacro {
@@ -25,17 +44,35 @@ object MongoDSL extends UtilsMacro {
       q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded})"
     }
 
-    q"new { ..$fields }"
+    q"new Make[$tpe] { ..$fields }"
 
   }
 }
 
+trait Make[C]
+
+case class Result[C](c: C)
+
+case class Predicate[F](c: Expression[F]) {
+  def select[T <: Make[_]](c: T): Result[T] = {
+    println("select")
+    Result(c)
+  }
+  def select(): Result[F] = ???
+}
 
 case class Field[P, C](fieldName: String) {
-  def gt(right: C) = { finder:P => BooleanExpression(this, right) }
+  def ===(right: C) = BooleanExpression(this, right, "eq")
+  def >(right: C) = BooleanExpression(this, right, "gt")
+  def <(right: C) = BooleanExpression(this, right, "lt")
+  def >=(right: C) = BooleanExpression(this, right, "gte")
+  def <=(right: C) = BooleanExpression(this, right, "lte")
 }
 
-trait Expression
-case class BooleanExpression[P, C](left: Field[P, C], right: C) extends Expression {
-  def and () = ???
+
+trait Expression[T] {
+  def and(r: Expression[T]) = LogicalExpression(this, r, "and")
+  def or(r: Expression[T]) = LogicalExpression(this, r, "or")
 }
+case class BooleanExpression[P, C](left: Field[P, C], right: C, operator: String) extends Expression[P]
+case class LogicalExpression[P, C, C2](left: Expression[P], right: Expression[P], operator: String) extends Expression[P]
