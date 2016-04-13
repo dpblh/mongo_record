@@ -42,10 +42,7 @@ object Person extends MongoDSL { //val person = meta[Person]
 
   from(person){ s =>
     where(s.name > "tim" and s.age > 23 and s.name === "tim" or s.age < 12) select s
+//    where(token.name > "tim") select token
   }
-
-  find(token.name === "tim")
-
-  findOne(token.name === "tim")
 
 }

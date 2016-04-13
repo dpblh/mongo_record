@@ -15,11 +15,9 @@ trait MongoDSL {
    * @tparam T Collection type
    * @return
    */
-  def from[T <: Make[_]](c: T)(c1: T => Result[T]):Result[T] = c1(c)
-
-  def find[T <: Make[_]](exp: Expression[_]) = Predicate(exp).select()
-
-  def findOne[T <: Make[_]](exp: Expression[_]) = Predicate(exp).select()
+  //можно попробовать через case class
+  protected def from[T <: Make[_]](c: T)(c1: T => Result[T]):Result[T] = c1(c)
+//  def from[T,C](c: T)(c1: T => Result[T])(implicit conv: T => Make[C]):Result[T] = c1(c)
 
   /**
    * predicate builder
@@ -27,7 +25,7 @@ trait MongoDSL {
    * @tparam F field type
    * @return
    */
-  def where[F](c: Expression[F]):Predicate[F] = Predicate(c)
+  protected def where[F](c: Expression[F]):Predicate[F] = Predicate(c)
 
 }
 object MongoDSL extends UtilsMacro {
