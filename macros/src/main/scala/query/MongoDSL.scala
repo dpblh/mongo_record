@@ -16,16 +16,59 @@ trait MongoDSL {
    * @return
    */
   //можно попробовать через case class
-  protected def from[T <: Make[_]](c: T)(c1: T => Result[T]):Result[T] = c1(c)
-//  def from[T,C](c: T)(c1: T => Result[T])(implicit conv: T => Make[C]):Result[T] = c1(c)
+  protected def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T, _]):SelectExpression[T, _] = c1(c)
+//  def from[T,C](c: T)(c1: T => SelectExpression[T, C])(implicit conv: T => Make[C]):SelectExpression[T, C] = c1(c)
 
   /**
    * predicate builder
    * @param c
-   * @tparam F field type
+   * @tparam C Collection
    * @return
    */
-  protected def where[F](c: Expression[F]):Predicate[F] = Predicate(c)
+  protected def where[C](c: Expression[C]):WhereExpression[C] = WhereExpression(c)
+
+
+  trait Make[C]
+
+  case class SelectExpression[S <: Make[C], C](w: Expression[C], c: S) extends Query
+
+  case class WhereExpression[C](c: Expression[C]) extends Query {
+    def select[S <: Make[C]](c1: S) = {
+      SelectExpression(c, c1)
+    }
+  }
+
+  trait Query
+  trait Expression[T] extends Query {
+    def and(r: Expression[T]) = LogicalExpression(this, r, "and")
+    def or(r: Expression[T]) = LogicalExpression(this, r, "or")
+  }
+
+  /**
+   *
+   * @param left
+   * @param right
+   * @param operator
+   * @tparam C collection
+   * @tparam F field
+   */
+  case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String) extends Expression[C]
+  case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
+
+  /**
+   *
+   * @param fieldName
+   * @tparam C collection
+   * @tparam F field
+   */
+  case class Field[C, F](fieldName: String) {
+    def ===(right: F) = BooleanExpression(this, right, "eq")
+    def >(right: F) = BooleanExpression(this, right, "gt")
+    def <(right: F) = BooleanExpression(this, right, "lt")
+    def >=(right: F) = BooleanExpression(this, right, "gte")
+    def <=(right: F) = BooleanExpression(this, right, "lte")
+  }
+
 
 }
 object MongoDSL extends UtilsMacro {
@@ -45,32 +88,5 @@ object MongoDSL extends UtilsMacro {
     q"new Make[$tpe] { ..$fields }"
 
   }
+
 }
-
-trait Make[C]
-
-case class Result[C](c: C)
-
-case class Predicate[F](c: Expression[F]) {
-  def select[T <: Make[_]](c: T): Result[T] = {
-    println("select")
-    Result(c)
-  }
-  def select(): Result[F] = ???
-}
-
-case class Field[P, C](fieldName: String) {
-  def ===(right: C) = BooleanExpression(this, right, "eq")
-  def >(right: C) = BooleanExpression(this, right, "gt")
-  def <(right: C) = BooleanExpression(this, right, "lt")
-  def >=(right: C) = BooleanExpression(this, right, "gte")
-  def <=(right: C) = BooleanExpression(this, right, "lte")
-}
-
-
-trait Expression[T] {
-  def and(r: Expression[T]) = LogicalExpression(this, r, "and")
-  def or(r: Expression[T]) = LogicalExpression(this, r, "or")
-}
-case class BooleanExpression[P, C](left: Field[P, C], right: C, operator: String) extends Expression[P]
-case class LogicalExpression[P, C, C2](left: Expression[P], right: Expression[P], operator: String) extends Expression[P]
