@@ -13,15 +13,25 @@ trait UtilsMacro {
     object CaseField {
       def unapply(trmSym: TermSymbol): Option[(Name, Type)] = {
         if (trmSym.isVal && trmSym.isCaseAccessor)
-          Some((newTermName(trmSym.name.toString.trim), trmSym.typeSignature))
+          Some((TermName(trmSym.name.toString.trim), trmSym.typeSignature))
         else
           None
       }
     }
 
-    tpe.declarations.collect {
+    tpe.decls.collect {
       case CaseField(nme, tpe) =>
         (nme, tpe)
+    }
+  }
+
+  def isSimpleType(c: Context)(tpe: c.universe.Type):Boolean = {
+    import c.universe._
+    tpe.typeSymbol.name.toString match {
+      case "Int" => true
+      case "String" => true
+      case "Long" => true
+      case _ => false
     }
   }
 }

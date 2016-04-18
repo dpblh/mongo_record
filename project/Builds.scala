@@ -15,11 +15,7 @@ object Builds extends Build {
     version := "0.0.1",
     organization := "TEKO",
     scalaVersion := scalaV,
-    name := NAME//,
-//    libraryDependencies := Seq(
-//      "org.scala-lang" % "scala-reflect" % scalaV,
-//      "org.scala-lang" % "scala-compiler" % scalaV
-//    )
+    name := NAME
   )
 
   lazy val main = Project(
@@ -31,6 +27,11 @@ object Builds extends Build {
 
   lazy val core = Project(id = "core",
     base = file("core"))
+    .settings(
+      libraryDependencies := Seq(
+        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+      )
+    )
     .dependsOn(macros)
 
   lazy val macros = Project(id = "macros",

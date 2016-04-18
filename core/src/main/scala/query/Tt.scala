@@ -17,7 +17,7 @@ object Tt {
 //    assert(tup.name == Field[Person, String]("name"))
 //    assert(tup.age == Field[Person, Int]("age"))
 
-    println(Person.person.name)
+//    println(Person.person.name)
 
   }
 
@@ -25,20 +25,20 @@ object Tt {
 }
 
 
-case class Person(name: String, age: Int)
+case class Person(name: String, fio: String, age: Int, asd: Int, current_at: Long, token: Token)
 case class Token(id: String)
 
-object Person extends MongoDSL { //val person = meta[Person]
+object Person extends MongoDSL { val person = meta[Person]
 
-  val person = new Make[Person] {
-    val name = Field[Person, String]("name")
-    val age = Field[Person, Int]("age")
-  }
-
-  val token = new Make[Token] {
-    val name = Field[Token, String]("name")
-    val age = Field[Token, Int]("age")
-  }
+//  val person = new Make[Person] {
+//    val name = Field[Person, String]("name")
+//    val age = Field[Person, Int]("age")
+//  }
+//
+//  val token = new Make[Token] {
+//    val name = Field[Token, String]("name")
+//    val age = Field[Token, Int]("age")
+//  }
 
   val s = from(person){ s =>
     where(s.name > "tim" and s.age > 23 and s.name === "tim" or s.age < 12) select s
