@@ -1,12 +1,14 @@
 package record
 
+import MongoRecord._
+
 /**
  * Created by tim on 19.04.16.
  */
 case class Person(name: String, fio: String, age: Int)
 
 object Person extends MongoRecordImpl {
-  //  val person = meta[Person]
+//    val person = meta[Person]
 
   val person = new Make[Person] {
     val collection_name = "person"
