@@ -4,8 +4,6 @@ import sbtassembly.AssemblyKeys._
 
 object Builds extends Build {
 
-  val sprayVersion = "1.3.2"
-  val akkaVersion = "2.3.9"
   val scalaV = "2.11.7"
   val NAME = "kassa"
 
@@ -15,7 +13,10 @@ object Builds extends Build {
     version := "0.0.1",
     organization := "TEKO",
     scalaVersion := scalaV,
-    name := NAME
+    name := NAME,
+    libraryDependencies := Seq(
+
+    )
   )
 
   lazy val main = Project(
@@ -29,6 +30,7 @@ object Builds extends Build {
     base = file("core"))
     .settings(
       libraryDependencies := Seq(
+        "org.json4s" %% "json4s-jackson" % "3.2.11",
         "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
       )
     )
