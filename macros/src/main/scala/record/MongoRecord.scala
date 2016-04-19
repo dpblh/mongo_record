@@ -21,6 +21,8 @@ trait MongoRecord {
 
   def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T]): UpdateResult[T] = UpdateResult(c, c1(c))
 
+  def mapReduce[T <: Make[_]](c: T)(c1: T => Reduce[_]): MapReduceResult[T] = MapReduceResult(c, c1(c))
+
   /**
    * predicate builder
    * @param c
@@ -35,6 +37,12 @@ trait MongoRecord {
     override def toString:String = collection_name
     def insert(c: C):String = {
       "db.%s.insert(%s)".format(collection_name, classAsString(c))
+    }
+  }
+
+  case class MapReduceResult[T  <: Make[_]](c: T, s: Reduce[_]) extends Query {
+    override def toString: String = {
+      "db.%s.mapReduce(%s)".format(c, s)
     }
   }
 
@@ -70,8 +78,31 @@ trait MongoRecord {
     def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
       UpdateExpression[S](c, update)
     }
+    def emit[K, V](key: Field[C, K], value: Field[C, V]) = Emit(key, value)
     override def toString:String = {
       s"{${c.toString}}"
+    }
+  }
+
+  case class Emit[C, K, V](key: Field[C, K], value: Field[C, V]){
+    def sum = Sum(this, value)
+    def max = Max(this, value)
+    override def toString:String = {
+      "emit(e.%s, e.%s)".format(key, value)
+    }
+  }
+
+  trait Reduce[C]
+
+  case class Max[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
+    override def toString:String = {
+      "function(e){%s}, function(key, values){Array.max(values)}".format(e)
+    }
+  }
+
+  case class Sum[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
+    override def toString:String = {
+      "function(e){%s}, function(key, values){Array.sum(values)}".format(e)
     }
   }
 

@@ -2,6 +2,8 @@ package record
 
 import MongoRecord._
 
+import scala.language.postfixOps
+
 /**
  * Created by tim on 19.04.16.
  */
@@ -34,6 +36,14 @@ object Person extends MongoRecordImpl {
 
   val updated = update(person) { s =>
     where(s.age === 23) set(s.name := "ivan", s.age := 22)
+  }
+
+  val totalAge = mapReduce(person) { s =>
+    where(s.name === "tim") emit(s.name, s.age) sum
+  }
+
+  val maxAge = mapReduce(person) { s =>
+    where(s.name === "tim") emit(s.name, s.age) max
   }
 
 }
