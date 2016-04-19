@@ -1,84 +1,21 @@
 package record
 
 import org.scalatest.{Matchers, FreeSpec}
-import query.{Raw, UtilsMacro}
-
-import scala.reflect._
-
 /**
- * Created by tim on 16.04.16.
+ * Created by tim on 18.04.16.
  */
-class MongoRecordTest extends FreeSpec with Matchers { that =>
+class MongoRecordTest extends FreeSpec with Matchers {
 
-  case class Person(name: String, age: Int)
+  Person.findAnd.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $and : [{age: { $gt: '23' }}, {age: { $lt: '12' }}]})".replaceAll("\\s", "")
 
-  object Person extends MongoRecord {
+  Person.findOr.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $or: [{name: 'tim'}, {age: { $gt: '23' }}] })".replaceAll("\\s", "")
 
-    val person = scheme[Person]
+  Person.findAndOrPriority.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $and: [{ $or: [{name: 'tim'}, {age: { $gt: '23' }}]}, { $or: [{name: 'jon'}, {age: '21'}] }] })".replaceAll("\\s", "")
 
-    from(person){ p =>
-      where(p.age === 123) select p
-    }
+  Person.find.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $or : [{name: 'tim'}, { $and : [{age: { $gt : '23' }}, {age : '12'}]}]})".replaceAll("\\s", "")
 
-    def find = {
-      from(person){ p =>
-        where(p.age === 123) select p
-      }
-    }
+  Person.person.insert(Person("tim", "bay", 23)).replaceAll("\\s", "") shouldBe """db.person.insert({'name': 'tim', 'fio': 'bay', 'age': 23})""".replaceAll("\\s", "")
 
-  }
-
-//  println(Person.find)
-
-  import scala.reflect.runtime.{universe => ru}
-  import ru._
-
-
-
-  println(createInstance[P]())
-
-  def createInstance[T:TypeTag]() : Any= {
-//    val constructor = classOf[Class[T]].getConstructors()(0)
-//
-//    println(constructor.getParameterCount)
-    createInstance(typeOf[T])
-  }
-
-
-  def createInstance(tpe:Type): Any = {
-
-
-    object CaseField {
-      def unapply(trmSym: TermSymbol): Option[String] = {
-        if (trmSym.isVal && trmSym.isCaseAccessor)
-          Some(trmSym.typeSignature.toString)
-        else
-          None
-      }
-    }
-
-    val r = tpe.decls.collect {
-      case CaseField(tpe) =>
-        tpe match {
-          case "String" => "noop"
-          case "Int" => 0
-          case x => null
-        }
-    }
-
-    val mirror = ru.runtimeMirror(getClass.getClassLoader)
-    val clsSym = tpe.typeSymbol.asClass
-    val clsMirror = mirror.reflectClass(clsSym)
-    val ctorSym = tpe.decl(ru.termNames.CONSTRUCTOR).asMethod
-    val ctorMirror = clsMirror.reflectConstructor(ctorSym)
-    val instance = ctorMirror(r.toSeq: _*)
-    return instance
-  }
-
-
-
-  val a1 = Person("tim", 27)
-  println(Raw.getName(a1.name))
+  Person.updated.toString.replaceAll("\\s", "") shouldBe "db.TODO.update({age : '23'}, {name : 'ivan', age : '22'})".replaceAll("\\s", "")
 
 }
-case class P(n:String)

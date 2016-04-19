@@ -1,4 +1,4 @@
-package query
+package record
 
 import scala.reflect.macros.whitebox.Context
 

@@ -1,11 +1,14 @@
-package query
+package record
 
-import org.json4s.{Formats, DefaultFormats}
+import scala.reflect.macros.whitebox.Context
+import scala.language.experimental.macros
 
 /**
  * Created by tim on 18.04.16.
  */
-trait MongoDSL {
+trait MongoRecord {
+
+  def classAsString[C <: AnyRef](c: C):String
 
   /**
    * просто карринг. для установки базового типа
@@ -14,10 +17,7 @@ trait MongoDSL {
    * @tparam T Collection type
    * @return
    */
-  //можно попробовать через case class
-  protected def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T, _]): SelectExpression[T, _] = c1(c)
-
-  //  def from[T,C](c: T)(c1: T => SelectExpression[T, C])(implicit conv: T => Make[C]):SelectExpression[T, C] = c1(c)
+  def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T, _]): SelectExpression[T, _] = c1(c)
 
   def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T, _]): UpdateExpression[T, _] = c1(c)
 
@@ -27,16 +27,14 @@ trait MongoDSL {
    * @tparam C Collection
    * @return
    */
-  protected def where[C <: AnyRef](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
+  def where[C <: AnyRef](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
 
 
   trait Make[C <: AnyRef] {
-    implicit def json4sJacksonFormats: Formats = DefaultFormats
-    import org.json4s.jackson.Serialization.write
     val collection_name:String
     override def toString:String = collection_name
     def insert(c: C):String = {
-      "db.%s.insert(%s)".format(collection_name, write(c))
+      "db.%s.insert(%s)".format(collection_name, classAsString(c))
     }
   }
 
@@ -130,5 +128,29 @@ trait MongoDSL {
 
   }
 
+
+}
+
+object MongoRecord extends UtilsMacro {
+
+  def meta[T]: Any = macro metaImpl[T]
+
+  def metaImpl[T: c.WeakTypeTag](c: Context) = {
+    import c.universe._
+
+    val tpe = weakTypeOf[T]
+
+    var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
+      val (name, typ) = p
+      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded})"
+    }.toList
+
+    val collection_name = "person"
+
+    fields = q"val collection_name = $collection_name" ::fields
+
+    q"new Make[$tpe] { ..$fields }"
+
+  }
 
 }

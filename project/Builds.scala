@@ -30,7 +30,6 @@ object Builds extends Build {
     base = file("core"))
     .settings(
       libraryDependencies := Seq(
-        "org.json4s" %% "json4s-jackson" % "3.2.11",
         "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
       )
     )
