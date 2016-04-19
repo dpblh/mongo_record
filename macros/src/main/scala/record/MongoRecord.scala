@@ -46,7 +46,7 @@ trait MongoRecord {
 
   case class UpdateExpression[T <: Make[C], C <: AnyRef](w: Expression[C], c: Seq[SetExpression[C, _]]) extends Query {
     override def toString: String = {
-      "db.TODO.update({%s}, {%s})".format(w, c.mkString(", "))
+      """db.TODO.update({%s}, { $set : {%s} })""".format(w, c.mkString(", "))
     }
   }
 
