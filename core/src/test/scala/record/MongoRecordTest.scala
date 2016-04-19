@@ -16,6 +16,6 @@ class MongoRecordTest extends FreeSpec with Matchers {
 
   Person.person.insert(Person("tim", "bay", 23)).replaceAll("\\s", "") shouldBe """db.person.insert({'name': 'tim', 'fio': 'bay', 'age': 23})""".replaceAll("\\s", "")
 
-  Person.updated.toString.replaceAll("\\s", "") shouldBe "db.TODO.update({age : '23'}, {$set: {name : 'ivan', age : '22'}})".replaceAll("\\s", "")
+  Person.updated.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$set: {name : 'ivan', age : '22'}})".replaceAll("\\s", "")
 
 }

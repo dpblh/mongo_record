@@ -17,9 +17,9 @@ trait MongoRecord {
    * @tparam T Collection type
    * @return
    */
-  def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T, _]): SelectExpression[T, _] = c1(c)
+  def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T]): SelectResult[T] = SelectResult[T](c, c1(c))
 
-  def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T, _]): UpdateExpression[T, _] = c1(c)
+  def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T]): UpdateResult[T] = UpdateResult(c, c1(c))
 
   /**
    * predicate builder
@@ -38,15 +38,27 @@ trait MongoRecord {
     }
   }
 
-  case class SelectExpression[S <: Make[C], C <: AnyRef](w: Expression[C], c: S) extends Query {
+  case class SelectResult[T  <: Make[_]](c: T, s: SelectExpression[T]) extends Query {
     override def toString: String = {
-      s"db.${c.toString}.find({$w})"
+      "db.%s.find(%s)".format(c, s)
     }
   }
 
-  case class UpdateExpression[T <: Make[C], C <: AnyRef](w: Expression[C], c: Seq[SetExpression[C, _]]) extends Query {
+  case class SelectExpression[S <: Make[_]](w: Expression[_], c: S) extends Query {
     override def toString: String = {
-      """db.TODO.update({%s}, { $set : {%s} })""".format(w, c.mkString(", "))
+      "{%s}".format(w)
+    }
+  }
+
+  case class UpdateResult[T  <: Make[_]](c: T, s: UpdateExpression[T]) extends Query {
+    override def toString: String = {
+      "db.%s.update(%s)".format(c, s)
+    }
+  }
+
+  case class UpdateExpression[T <: Make[_]](w: Expression[_], c: Seq[SetExpression[_, _]]) extends Query {
+    override def toString: String = {
+      """{%s}, { $set : {%s} }""".format(w, c.mkString(", "))
     }
   }
 
@@ -55,8 +67,8 @@ trait MongoRecord {
     def select[S <: Make[C]](c1: S) = {
       SelectExpression(c, c1)
     }
-    def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S, C] = {
-      UpdateExpression[S, C](c, update)
+    def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
+      UpdateExpression[S](c, update)
     }
     override def toString:String = {
       s"{${c.toString}}"
