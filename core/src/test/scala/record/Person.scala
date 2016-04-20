@@ -18,19 +18,19 @@ object Person extends MongoRecordImpl {
 
   val person = new Make[Person] {
     val collection_name = "person"
-    val id = Field[Person, String]("id", collection_name)
-    val name = Field[Person, String]("name", collection_name)
-    val age = Field[Person, Int]("age", collection_name)
+    val id = Field[Person, String]("id", this)
+    val name = Field[Person, String]("name", this)
+    val age = Field[Person, Int]("age", this)
   }
 
   val token = new Make[Token] {
     val collection_name = "token"
-    val person_id = Field[Token, String]("person_id", collection_name)
+    val person_id = Field[Token, String]("person_id", this)
   }
 
   val friend = new Make[Friend] {
     val collection_name = "friend"
-    val person_id = Field[Friend, String]("person_id", collection_name)
+    val person_id = Field[Friend, String]("person_id", this)
   }
 
   val findAnd = from(person) { s =>

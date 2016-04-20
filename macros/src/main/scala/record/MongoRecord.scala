@@ -10,7 +10,7 @@ trait MongoRecord {
 
   type M = Make[_]
 
-  def classAsString[C <: AnyRef](c: C):String
+  def classAsString[C](c: C):String
 
   /**
    * просто карринг. для установки базового типа
@@ -35,10 +35,10 @@ trait MongoRecord {
    * @tparam C Collection
    * @return
    */
-  def where[C <: AnyRef](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
+  def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
 
 
-  trait Make[C <: AnyRef] {
+  trait Make[C] {
     val collection_name:String
     override def toString:String = collection_name
     def insert(c: C):String = {
@@ -91,7 +91,7 @@ trait MongoRecord {
   }
 
 
-  case class WhereExpression[C <: AnyRef](c: Expression[C]) extends Query {
+  case class WhereExpression[C](c: Expression[C]) extends Query {
     def select[S <: Make[C]](c1: S) = {
       SelectEntity(c, c1)
     }
@@ -184,7 +184,7 @@ trait MongoRecord {
           |    as: "copies_sold"
           |  }
           |}
-        """.stripMargin.format(join.joined.collectionName, join.owner, join.joined)
+        """.stripMargin.format(join.joined.collection, join.owner, join.joined)
       }.mkString(", ")
     }
   }
@@ -195,7 +195,10 @@ trait MongoRecord {
    * @tparam C collection
    * @tparam F field
    */
-  case class Field[C, F](fieldName: String, collectionName: String) {
+  //collectionName = this )
+  // альтернативная реализация на object
+  // implicit where
+  case class Field[C, F](fieldName: String, collection: Make[C]) {
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
     def ===[C1](joined: Field[C1, F]) = Join(this, joined, Seq())
@@ -230,7 +233,7 @@ object MongoRecord extends UtilsMacro {
 
     var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded}, $collection_name)"
+      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded}, this)"
     }.toList
 
     fields = q"val collection_name = $collection_name" ::fields
