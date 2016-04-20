@@ -22,4 +22,6 @@ class MongoRecordTest extends FreeSpec with Matchers {
 
   Person.maxAge.toString.replaceAll("\\s", "") shouldBe "db.person.mapReduce(function(e){emit(e.name, e.age)}, function(key, values){Array.max(values)})".replaceAll("\\s", "")
 
+  Person.selectFields.toString.replaceAll("\\s", "") shouldBe "db.person.find({name: 'tim'}, {name: 1, age: 1})".replaceAll("\\s", "")
+
 }

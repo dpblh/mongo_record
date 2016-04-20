@@ -17,7 +17,7 @@ trait MongoRecord {
    * @tparam T Collection type
    * @return
    */
-  def from[T <: Make[_]](c: T)(c1: T => SelectExpression[T]): SelectResult[T] = SelectResult[T](c, c1(c))
+  def from[T <: Make[_]](c: T)(c1: T => SelectExpression): SelectResult[T] = SelectResult[T](c, c1(c))
 
   def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T]): UpdateResult[T] = UpdateResult(c, c1(c))
 
@@ -46,15 +46,23 @@ trait MongoRecord {
     }
   }
 
-  case class SelectResult[T  <: Make[_]](c: T, s: SelectExpression[T]) extends Query {
+  case class SelectResult[T  <: Make[_]](c: T, s: SelectExpression) extends Query {
     override def toString: String = {
       "db.%s.find(%s)".format(c, s)
     }
   }
 
-  case class SelectExpression[S <: Make[_]](w: Expression[_], c: S) extends Query {
+  trait SelectExpression extends Query
+
+  case class SelectEntity[T <: Make[_]](w: Expression[_], c: T) extends SelectExpression {
     override def toString: String = {
       "{%s}".format(w)
+    }
+  }
+
+  case class SelectFields[C](w: Expression[_], c: Seq[Field[C, _]]) extends SelectExpression {
+    override def toString: String = {
+      "{%s}, {%s}".format(w, c.map(f => s"$f : 1").mkString(","))
     }
   }
 
@@ -73,7 +81,10 @@ trait MongoRecord {
 
   case class WhereExpression[C <: AnyRef](c: Expression[C]) extends Query {
     def select[S <: Make[C]](c1: S) = {
-      SelectExpression(c, c1)
+      SelectEntity(c, c1)
+    }
+    def select(c1: Field[C, _]*) = {
+      SelectFields(c, c1)
     }
     def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
       UpdateExpression[S](c, update)

@@ -34,6 +34,10 @@ object Person extends MongoRecordImpl {
     where(s.name === "tim" || s.age > 23 && s.age === 12) select s
   }
 
+  val selectFields = from(person) { s =>
+    where(s.name === "tim") select (s.name, s.age)
+  }
+
   val updated = update(person) { s =>
     where(s.age === 23) set(s.name := "ivan", s.age := 22)
   }
