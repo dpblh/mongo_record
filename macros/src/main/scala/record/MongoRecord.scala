@@ -8,6 +8,8 @@ import scala.language.experimental.macros
  */
 trait MongoRecord {
 
+  type M = Make[_]
+
   def classAsString[C <: AnyRef](c: C):String
 
   /**
@@ -17,11 +19,15 @@ trait MongoRecord {
    * @tparam T Collection type
    * @return
    */
-  def from[T <: Make[_]](c: T)(c1: T => SelectExpression): SelectResult[T] = SelectResult[T](c, c1(c))
+  def from[T <: M](c: T)(c1: T => SelectExpression): SelectResult[T] = SelectResult[T](c, c1(c))
 
-  def update[T <: Make[_]](c: T)(c1: T => UpdateExpression[T]): UpdateResult[T] = UpdateResult(c, c1(c))
+  def join[T <: M, T1 <: M](c: T, c1: T1)(f: (T, T1) => Join[_, _, _]): JoinResult[T, T1] = JoinResult[T, T1](c, c1, f(c, c1))
 
-  def mapReduce[T <: Make[_]](c: T)(c1: T => Reduce[_]): MapReduceResult[T] = MapReduceResult(c, c1(c))
+  def join[T <: M, T1 <: M, T2 <: M](c: T, c1: T1, c2: T2)(f: (T, T1, T2) => Join[_, _, _]): JoinResult[T, T1] = JoinResult[T, T1](c, c1, f(c, c1, c2))
+
+  def update[T <: M](c: T)(c1: T => UpdateExpression[T]): UpdateResult[T] = UpdateResult(c, c1(c))
+
+  def mapReduce[T <: M](c: T)(c1: T => Reduce[_]): MapReduceResult[T] = MapReduceResult(c, c1(c))
 
   /**
    * predicate builder
@@ -40,21 +46,27 @@ trait MongoRecord {
     }
   }
 
-  case class MapReduceResult[T  <: Make[_]](c: T, s: Reduce[_]) extends Query {
+  case class MapReduceResult[T  <: M](c: T, s: Reduce[_]) extends Query {
     override def toString: String = {
       "db.%s.mapReduce(%s)".format(c, s)
     }
   }
 
-  case class SelectResult[T  <: Make[_]](c: T, s: SelectExpression) extends Query {
+  case class SelectResult[T  <: M](c: T, s: SelectExpression) extends Query {
     override def toString: String = {
       "db.%s.find(%s)".format(c, s)
     }
   }
 
+  case class JoinResult[T  <: M, T1  <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query {
+    override def toString: String = {
+      "db.%s.aggregate([%s])".format(c, joined)
+    }
+  }
+
   trait SelectExpression extends Query
 
-  case class SelectEntity[T <: Make[_]](w: Expression[_], c: T) extends SelectExpression {
+  case class SelectEntity[T <: M](w: Expression[_], c: T) extends SelectExpression {
     override def toString: String = {
       "{%s}".format(w)
     }
@@ -66,13 +78,13 @@ trait MongoRecord {
     }
   }
 
-  case class UpdateResult[T  <: Make[_]](c: T, s: UpdateExpression[T]) extends Query {
+  case class UpdateResult[T  <: M](c: T, s: UpdateExpression[T]) extends Query {
     override def toString: String = {
       "db.%s.update(%s)".format(c, s)
     }
   }
 
-  case class UpdateExpression[T <: Make[_]](w: Expression[_], c: Seq[SetExpression[_, _]]) extends Query {
+  case class UpdateExpression[T <: M](w: Expression[_], c: Seq[SetExpression[_, _]]) extends Query {
     override def toString: String = {
       """{%s}, { $set : {%s} }""".format(w, c.mkString(", "))
     }
@@ -89,6 +101,7 @@ trait MongoRecord {
     def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
       UpdateExpression[S](c, update)
     }
+    def on[C1, F](f: => Join[C, C1, F]):Join[C, C1, F] = f
     def emit[K, V](key: Field[C, K], value: Field[C, V]) = Emit(key, value)
     override def toString:String = {
       s"{${c.toString}}"
@@ -159,14 +172,33 @@ trait MongoRecord {
     }
   }
 
+  case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], stack: Seq[Join[_, _, _]]) extends Query {
+    def on[C2](f: => Join[C, C2, F]) = this.copy(stack = stack :+ f)
+    override def toString:String = {
+      (stack :+ this).map { join =>
+        """{
+          |  $lookup: {
+          |    from: "%s",
+          |    localField: "%s",
+          |    foreignField: "%s",
+          |    as: "copies_sold"
+          |  }
+          |}
+        """.stripMargin.format(join.joined.collectionName, join.owner, join.joined)
+      }.mkString(", ")
+    }
+  }
+
   /**
    *
    * @param fieldName
    * @tparam C collection
    * @tparam F field
    */
-  case class Field[C, F](fieldName: String) {
+  case class Field[C, F](fieldName: String, collectionName: String) {
     def ===(right: F) = BooleanExpression(this, right, "eq")
+
+    def ===[C1](joined: Field[C1, F]) = Join(this, joined, Seq())
 
     def >(right: F) = BooleanExpression(this, right, "gt")
 

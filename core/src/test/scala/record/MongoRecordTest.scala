@@ -14,7 +14,7 @@ class MongoRecordTest extends FreeSpec with Matchers {
 
   Person.find.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $or : [{name: 'tim'}, { $and : [{age: { $gt : '23' }}, {age : '12'}]}]})".replaceAll("\\s", "")
 
-  Person.person.insert(Person("tim", "bay", 23)).replaceAll("\\s", "") shouldBe """db.person.insert({'name': 'tim', 'fio': 'bay', 'age': 23})""".replaceAll("\\s", "")
+  Person.person.insert(Person("id", "tim", "bay", 23)).replaceAll("\\s", "") shouldBe """db.person.insert({'name': 'tim', 'fio': 'bay', 'age': 23})""".replaceAll("\\s", "")
 
   Person.updated.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$set: {name : 'ivan', age : '22'}})".replaceAll("\\s", "")
 
@@ -23,5 +23,38 @@ class MongoRecordTest extends FreeSpec with Matchers {
   Person.maxAge.toString.replaceAll("\\s", "") shouldBe "db.person.mapReduce(function(e){emit(e.name, e.age)}, function(key, values){Array.max(values)})".replaceAll("\\s", "")
 
   Person.selectFields.toString.replaceAll("\\s", "") shouldBe "db.person.find({name: 'tim'}, {name: 1, age: 1})".replaceAll("\\s", "")
+
+  Person.joined.toString.replaceAll("\\s", "") shouldBe
+    """
+      |db.person.aggregate([{
+      | $lookup: {
+      |   from: "token",
+      |   localField: "id",
+      |   foreignField: "person_id",
+      |   as: "copies_sold"
+      | }
+      |}])
+    """.stripMargin.replaceAll("\\s", "")
+
+  Person.joinedThree.toString.replaceAll("\\s", "") shouldBe
+    """
+      |db.person.aggregate([
+      |{
+      | $lookup: {
+      |   from: "friend",
+      |   localField: "id",
+      |   foreignField: "person_id",
+      |   as: "copies_sold"
+      | }
+      |},
+      |{
+      | $lookup: {
+      |   from: "token",
+      |   localField: "id",
+      |   foreignField: "person_id",
+      |   as: "copies_sold"
+      | }
+      |}])
+    """.stripMargin.replaceAll("\\s", "")
 
 }
