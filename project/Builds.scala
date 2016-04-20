@@ -5,7 +5,7 @@ import sbtassembly.AssemblyKeys._
 object Builds extends Build {
 
   val scalaV = "2.11.7"
-  val NAME = "kassa"
+  val NAME = "mongo_record"
 
   javacOptions ++= Seq("-encoding", "UTF-8")
 

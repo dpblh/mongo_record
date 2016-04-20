@@ -13,6 +13,8 @@ case class Friend(person_id: String)
 
 object Person extends MongoRecordImpl {
 //    val person = meta[Person]
+//    val token = meta[Token]
+//    val friend = meta[Friend]
 
   val person = new Make[Person] {
     val collection_name = "person"

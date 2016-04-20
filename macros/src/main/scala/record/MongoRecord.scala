@@ -226,12 +226,12 @@ object MongoRecord extends UtilsMacro {
 
     val tpe = weakTypeOf[T]
 
+    val collection_name = tpe.typeSymbol.name.toString.toLowerCase
+
     var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded})"
+      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded}, $collection_name)"
     }.toList
-
-    val collection_name = "person"
 
     fields = q"val collection_name = $collection_name" ::fields
 
