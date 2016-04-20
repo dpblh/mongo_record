@@ -11,25 +11,30 @@ case class Person(id: String, name: String, fio: String, age: Int)
 case class Token(person_id: String)
 case class Friend(person_id: String)
 
+//object token extends MongoRecordImpl with MongoRecordImpl.Make[Token] {
+//  override val collection_name: String = "token"
+//  val person_id = Field[Token, String]("person_id", this)
+//}
+
 object Person extends MongoRecordImpl {
 //    val person = meta[Person]
 //    val token = meta[Token]
 //    val friend = meta[Friend]
 
-  val person = new Make[Person] {
-    val collection_name = "person"
+  object token extends Make[Token] {
+    override val collection_name: String = "token"
+    val person_id = Field[Token, String]("person_id", this)
+  }
+
+  object person extends Make[Person] {
+    override val collection_name: String = "person"
     val id = Field[Person, String]("id", this)
     val name = Field[Person, String]("name", this)
     val age = Field[Person, Int]("age", this)
   }
 
-  val token = new Make[Token] {
-    val collection_name = "token"
-    val person_id = Field[Token, String]("person_id", this)
-  }
-
-  val friend = new Make[Friend] {
-    val collection_name = "friend"
+  object friend extends Make[Friend] {
+    override val collection_name: String = "friend"
     val person_id = Field[Friend, String]("person_id", this)
   }
 

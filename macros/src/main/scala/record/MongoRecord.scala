@@ -38,6 +38,8 @@ trait MongoRecord {
   def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
 
 
+  //add where
+  //add select
   trait Make[C] {
     val collection_name:String
     override def toString:String = collection_name
@@ -198,6 +200,8 @@ trait MongoRecord {
   //collectionName = this )
   // альтернативная реализация на object
   // implicit where
+  // подумать о LongField для более короткой записи
+  // т.к. добавился параметр типа коллекции, можно убрать один явный тип
   case class Field[C, F](fieldName: String, collection: Make[C]) {
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
