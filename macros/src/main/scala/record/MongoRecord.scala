@@ -8,7 +8,7 @@ import scala.language.experimental.macros
  */
 trait MongoRecord {
 
-  type M = Make[_]
+  type M = MongoRecord#Make[_]
 
   def classAsString[C](c: C):String
 
@@ -94,13 +94,13 @@ trait MongoRecord {
 
 
   case class WhereExpression[C](c: Expression[C]) extends Query {
-    def select[S <: Make[C]](c1: S) = {
+    def select[S <: MongoRecord#Make[C]](c1: S) = {
       SelectEntity(c, c1)
     }
     def select(c1: Field[C, _]*) = {
       SelectFields(c, c1)
     }
-    def set[S <: Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
+    def set[S <: MongoRecord#Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
       UpdateExpression[S](c, update)
     }
     def on[C1, F](f: => Join[C, C1, F]):Join[C, C1, F] = f
@@ -202,7 +202,7 @@ trait MongoRecord {
   // implicit where
   // подумать о LongField для более короткой записи
   // т.к. добавился параметр типа коллекции, можно убрать один явный тип
-  case class Field[C, F](fieldName: String, collection: Make[C]) {
+  case class Field[C, F](fieldName: String, collection: MongoRecord#Make[C]) {
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
     def ===[C1](joined: Field[C1, F]) = Join(this, joined, Seq())

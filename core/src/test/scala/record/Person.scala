@@ -1,7 +1,6 @@
 package record
 
 import MongoRecord._
-
 import scala.language.postfixOps
 
 /**
@@ -10,11 +9,6 @@ import scala.language.postfixOps
 case class Person(id: String, name: String, fio: String, age: Int)
 case class Token(person_id: String)
 case class Friend(person_id: String)
-
-//object token extends MongoRecordImpl with MongoRecordImpl.Make[Token] {
-//  override val collection_name: String = "token"
-//  val person_id = Field[Token, String]("person_id", this)
-//}
 
 object Person extends MongoRecordImpl {
 //    val person = meta[Person]
