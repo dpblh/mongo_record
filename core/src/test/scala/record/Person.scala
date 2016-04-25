@@ -17,19 +17,19 @@ object Person extends MongoRecordImpl {
 
   object token extends Make[Token] {
     override val collection_name: String = "token"
-    val person_id = Field[Token, String]("person_id", this)
+    object person_id extends Field[Token, String]("person_id", this)
   }
 
   object person extends Make[Person] {
     override val collection_name: String = "person"
-    val id = Field[Person, String]("id", this)
-    val name = Field[Person, String]("name", this)
-    val age = Field[Person, Int]("age", this)
+    object id extends Field[Person, String]("id", this)
+    object name extends Field[Person, String]("name", this)
+    object age extends Field[Person, Int]("age", this)
   }
 
   object friend extends Make[Friend] {
     override val collection_name: String = "friend"
-    val person_id = Field[Friend, String]("person_id", this)
+    object person_id extends Field[Friend, String]("person_id", this)
   }
 
   val findAnd = from(person) { s =>

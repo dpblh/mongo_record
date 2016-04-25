@@ -2,6 +2,7 @@ package record.use_cases.group
 
 import org.scalatest.{Matchers, FreeSpec}
 import record.MongoRecordImpl
+import record._
 
 /**
  * Created by tim on 22.04.16.
