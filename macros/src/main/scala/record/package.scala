@@ -156,6 +156,10 @@ package object record {
     }
   }
 
+  case class InsertResult[C](t: MongoRecord#Make[C], c: Any) extends Query {
+    override def toString: String = "db.%s.insert(%s)".format(t.collection_name, c)
+  }
+
   /**
    *
    * @tparam C collection
