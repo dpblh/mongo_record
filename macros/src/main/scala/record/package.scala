@@ -156,8 +156,8 @@ package object record {
     }
   }
 
-  case class InsertResult[C](t: MongoRecord#Make[C], c: Any) extends Query {
-    override def toString: String = "db.%s.insert(%s)".format(t.collection_name, c)
+  case class InsertResult[C](t: MongoRecord#Make[C], c: C, f: C => String) extends Query {
+    override def toString: String = "db.%s.insert(%s)".format(t.collection_name, f(c))
   }
 
   /**
@@ -166,8 +166,6 @@ package object record {
    * @tparam F field
    */
   // implicit where
-  // подумать о LongField для более короткой записи
-  // т.к. добавился параметр типа коллекции, можно убрать один явный тип
   trait Field[C, F] {
 
     val fieldName: String

@@ -41,7 +41,7 @@ trait MongoRecord {
   trait Make[C] {
     val collection_name:String
     override def toString:String = collection_name
-    def insert(c: C):InsertResult[C] = InsertResult(this, classAsString(c))
+    def insert(c: C):InsertResult[C] = InsertResult(this, c, classAsString)
     def isValid(c: C):Boolean = true
     def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
     def as(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
