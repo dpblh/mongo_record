@@ -41,7 +41,7 @@ class MongoRecordTest extends FreeSpec with Matchers {
       |db.person.aggregate([
       |{
       | $lookup: {
-      |   from: "friend",
+      |   from: "person_friend",
       |   localField: "id",
       |   foreignField: "person_id",
       |   as: "copies_sold"

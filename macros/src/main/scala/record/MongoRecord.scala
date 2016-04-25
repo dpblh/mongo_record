@@ -36,8 +36,6 @@ trait MongoRecord {
   def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
 
 
-  //add where
-  //add select
   trait Make[C] {
     val collection_name:String
     override def toString:String = collection_name
@@ -47,8 +45,6 @@ trait MongoRecord {
     def as(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
 
   }
-
-
 
 
 }
@@ -62,7 +58,7 @@ object MongoRecord extends UtilsMacro {
 
     val tpe = weakTypeOf[T]
 
-    val collection_name = tpe.typeSymbol.name.toString.toLowerCase
+    val collection_name = camelToUnderscores(tpe.typeSymbol.name.toString)
 
     var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p

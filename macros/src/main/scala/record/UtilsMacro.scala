@@ -25,6 +25,8 @@ trait UtilsMacro {
     }
   }
 
+  def camelToUnderscores(name: String) = name.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase
+
   def isSimpleType(c: Context)(tpe: c.universe.Type):Boolean = {
     import c.universe._
     tpe.typeSymbol.name.toString match {

@@ -8,12 +8,12 @@ import scala.language.postfixOps
  */
 case class Person(id: String, name: String, fio: String, age: Int)
 case class Token(person_id: String)
-case class Friend(person_id: String)
+case class PersonFriend(person_id: String)
 
 object Person extends MongoRecordImpl {
 //    val person = meta[Person]
 //    val token = meta[Token]
-//    val friend = meta[Friend]
+//    val friend = meta[PersonFriend]
 
   object token extends Make[Token] {
     override val collection_name: String = "token"
@@ -27,8 +27,8 @@ object Person extends MongoRecordImpl {
     object age extends IntField("age", this)
   }
 
-  object friend extends Make[Friend] {
-    override val collection_name: String = "friend"
+  object friend extends Make[PersonFriend] {
+    override val collection_name: String = "person_friend"
     object person_id extends StringField("person_id", this)
   }
 
