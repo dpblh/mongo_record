@@ -5,19 +5,19 @@ package object record {
 
   type M = MongoRecord#Make[_]
 
-  case class MapReduceResult[T  <: M](c: T, s: Reduce[_]) extends Query {
+  case class MapReduceResult[T <: M](c: T, s: Reduce[_]) extends Query {
     override def toString: String = {
       "db.%s.mapReduce(%s)".format(c, s)
     }
   }
 
-  case class SelectResult[T  <: M](c: T, s: SelectExpression) extends Query {
+  case class SelectResult[T <: M](c: T, s: SelectExpression) extends Query {
     override def toString: String = {
       "db.%s.find(%s)".format(c, s)
     }
   }
 
-  case class JoinResult[T  <: M, T1  <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query {
+  case class JoinResult[T <: M, T1 <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query {
     override def toString: String = {
       "db.%s.aggregate([%s])".format(c, joined)
     }
@@ -37,7 +37,7 @@ package object record {
     }
   }
 
-  case class UpdateResult[T  <: M](c: T, s: UpdateExpression[T]) extends Query {
+  case class UpdateResult[T <: M](c: T, s: UpdateExpression[T]) extends Query {
     override def toString: String = {
       "db.%s.update(%s)".format(c, s)
     }
@@ -54,23 +54,30 @@ package object record {
     def select[S <: MongoRecord#Make[C]](c1: S) = {
       SelectEntity(c, c1)
     }
+
     def select(c1: Field[C, _]*) = {
       SelectFields(c, c1)
     }
-    def set[S <: MongoRecord#Make[C]](update: SetExpression[C, _]*):UpdateExpression[S] = {
+
+    def set[S <: MongoRecord#Make[C]](update: SetExpression[C, _]*): UpdateExpression[S] = {
       UpdateExpression[S](c, update)
     }
-    def on[C1, F](f: => Join[C, C1, F]):Join[C, C1, F] = f
+
+    def on[C1, F](f: => Join[C, C1, F]): Join[C, C1, F] = f
+
     def emit[K, V](key: Field[C, K], value: Field[C, V]) = Emit(key, value)
-    override def toString:String = {
+
+    override def toString: String = {
       s"{${c.toString}}"
     }
   }
 
-  case class Emit[C, K, V](key: Field[C, K], value: Field[C, V]){
+  case class Emit[C, K, V](key: Field[C, K], value: Field[C, V]) {
     def sum = Sum(this, value)
+
     def max = Max(this, value)
-    override def toString:String = {
+
+    override def toString: String = {
       "emit(e.%s, e.%s)".format(key, value)
     }
   }
@@ -78,13 +85,13 @@ package object record {
   trait Reduce[C]
 
   case class Max[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
-    override def toString:String = {
+    override def toString: String = {
       "function(e){%s}, function(key, values){Array.max(values)}".format(e)
     }
   }
 
   case class Sum[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
-    override def toString:String = {
+    override def toString: String = {
       "function(e){%s}, function(key, values){Array.sum(values)}".format(e)
     }
   }
@@ -106,7 +113,7 @@ package object record {
    * @tparam F field
    */
   case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String) extends Expression[C] {
-    override def toString:String = {
+    override def toString: String = {
       operator match {
         case "eq" => s"${left.toString} : '${right.toString}'"
         case "gt" => "%s : { $gt : '%s' }".format(left.toString, right.toString)
@@ -117,7 +124,7 @@ package object record {
   }
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C] {
-    override def toString:String = {
+    override def toString: String = {
       operator match {
         case "and" => "$and : [{%s}, {%s}]".format(left.toString, right.toString)
         case "or" => "$or : [{%s}, {%s}]".format(left.toString, right.toString)
@@ -125,15 +132,16 @@ package object record {
     }
   }
 
-  case class SetExpression[C, F](left: Field[C,F], right: F) extends Query {
-    override def toString:String = {
+  case class SetExpression[C, F](left: Field[C, F], right: F) extends Query {
+    override def toString: String = {
       s"${left.toString} : '${right.toString}'"
     }
   }
 
   case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], stack: Seq[Join[_, _, _]]) extends Query {
     def on[C2](f: => Join[C, C2, F]) = this.copy(stack = stack :+ f)
-    override def toString:String = {
+
+    override def toString: String = {
       (stack :+ this).map { join =>
         """{
           |  $lookup: {
@@ -150,16 +158,17 @@ package object record {
 
   /**
    *
-   * @param fieldName
    * @tparam C collection
    * @tparam F field
    */
-  //collectionName = this )
-  // альтернативная реализация на object
   // implicit where
   // подумать о LongField для более короткой записи
   // т.к. добавился параметр типа коллекции, можно убрать один явный тип
-  case class Field[C, F](fieldName: String, collection: MongoRecord#Make[C]) {
+  trait Field[C, F] {
+
+    val fieldName: String
+    val collection: MongoRecord#Make[C]
+
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
     def ===[C1](joined: Field[C1, F]) = Join(this, joined, Seq())
@@ -172,10 +181,15 @@ package object record {
 
     def <=(right: F) = BooleanExpression(this, right, "lte")
 
-    def := (right: F) = SetExpression(this, right)
+    def :=(right: F) = SetExpression(this, right)
 
-    override def toString:String = fieldName
+    override def toString: String = fieldName
 
   }
+
+  case class UField[C, F](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, F]
+  case class StringField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, String]
+  case class IntField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, Int]
+  case class LongField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, Long]
 
 }

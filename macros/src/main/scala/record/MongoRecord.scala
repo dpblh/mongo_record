@@ -68,7 +68,7 @@ object MongoRecord extends UtilsMacro {
 
     var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"val ${TermName(name.encoded)} = Field[$tpe, $typ](${name.encoded}, this)"
+      q"val ${TermName(name.encoded)} = UField[$tpe, $typ](${name.encoded}, this)"
     }.toList
 
     fields = q"val collection_name = $collection_name" ::fields

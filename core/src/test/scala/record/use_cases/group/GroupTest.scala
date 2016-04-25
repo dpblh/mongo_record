@@ -15,14 +15,14 @@ object PersonToken extends MongoRecordImpl {
 
   object Token extends Make[Token] {
     override val collection_name: String = "token"
-    object person_id extends Field[Token, String]("person_id", this)
+    object person_id extends StringField("person_id", this)
   }
 
   object PersonService extends Make[Person] {
     override val collection_name: String = "person"
-    object id extends Field[Person, String]("id", this)
-    object name extends Field[Person, String]("name", this)
-    object age extends Field[Person, Int]("age", this)
+    object id extends StringField("id", this)
+    object name extends StringField("name", this)
+    object age extends IntField("age", this)
     
     val findAnd = from(this) { s =>
       where(s.age > 23 && s.age < 12) select s
