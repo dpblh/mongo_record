@@ -1,9 +1,28 @@
-/**
- * Created by tim on 25.04.16.
- */
-package object record {
+package record
 
-  type M = MongoRecord#Make[_]
+/**
+ * Created by tim on 29.04.16.
+ */
+trait Lexis {
+
+  this: {
+    def classAsString[C](c: C):String
+  } =>
+
+  type M = Meta[_]
+
+  trait Make[C]
+
+  trait Meta[C] extends Make[C] {
+    val collection_name:String
+    override def toString:String = collection_name
+    def insert(c: C):InsertResult[C] = InsertResult(this, c, classAsString)
+    def isValid(c: C):Boolean = true
+    def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
+    def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
+      override val collection_name: String = collection_name
+    }
+  }
 
   case class MapReduceResult[T <: M](c: T, s: Reduce[_]) extends Query {
     override def toString: String = {
@@ -49,9 +68,8 @@ package object record {
     }
   }
 
-
   case class WhereExpression[C](c: Expression[C]) extends Query {
-    def select[S <: MongoRecord#Make[C]](c1: S) = {
+    def select[S <: Meta[C]](c1: S) = {
       SelectEntity(c, c1)
     }
 
@@ -59,7 +77,7 @@ package object record {
       SelectFields(c, c1)
     }
 
-    def set[S <: MongoRecord#Make[C]](update: SetExpression[C, _]*): UpdateExpression[S] = {
+    def set[S <: Meta[C]](update: SetExpression[C, _]*): UpdateExpression[S] = {
       UpdateExpression[S](c, update)
     }
 
@@ -156,7 +174,7 @@ package object record {
     }
   }
 
-  case class InsertResult[C](t: MongoRecord#Make[C], c: C, f: C => String) extends Query {
+  case class InsertResult[C](t: Meta[C], c: C, f: C => String) extends Query {
     override def toString: String = "db.%s.insert(%s)".format(t.collection_name, f(c))
   }
 
@@ -166,10 +184,10 @@ package object record {
    * @tparam F field
    */
   // implicit where
-  trait Field[C, F] extends WO[C] {
+  trait Field[C, F] extends Make[C] {
 
     val fieldName: String
-    val collection: WO[C]
+    val collection: Make[C]
 
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
@@ -187,16 +205,18 @@ package object record {
 
     override def toString: String = {
       collection match {
-        case x: MongoRecord#Make[C] => fieldName
+        case x: Meta[C] => fieldName
         case x: Field[C, _] => x+"."+fieldName
       }
     }
 
   }
 
-  case class UField[C, F](fieldName: String, collection: WO[C]) extends Field[C, F]
-  case class StringField[C](fieldName: String, collection: WO[C]) extends Field[C, String]
-  case class IntField[C](fieldName: String, collection: WO[C]) extends Field[C, Int]
-  case class LongField[C](fieldName: String, collection: WO[C]) extends Field[C, Long]
+  case class UField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F]
+  case class StringField[C](fieldName: String, collection: Make[C]) extends Field[C, String]
+  case class IntField[C](fieldName: String, collection: Make[C]) extends Field[C, Int]
+  case class LongField[C](fieldName: String, collection: Make[C]) extends Field[C, Long]
+
+  case class InnerField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F]
 
 }

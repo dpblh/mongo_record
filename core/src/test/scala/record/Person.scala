@@ -15,19 +15,19 @@ object Person extends MongoRecordImpl {
 //    val token = meta[Token]
 //    val friend = meta[PersonFriend]
 
-  object token extends Make[Token] {
+  object token extends Meta[Token] {
     override val collection_name: String = "token"
     object person_id extends StringField("person_id", this)
   }
 
-  object person extends Make[Person] {
+  object person extends Meta[Person] {
     override val collection_name: String = "person"
     object id extends StringField("id", this)
     object name extends StringField("name", this)
     object age extends IntField("age", this)
   }
 
-  object friend extends Make[PersonFriend] {
+  object friend extends Meta[PersonFriend] {
     override val collection_name: String = "person_friend"
     object person_id extends StringField("person_id", this)
   }

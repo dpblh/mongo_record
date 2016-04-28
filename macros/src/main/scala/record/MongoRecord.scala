@@ -6,7 +6,7 @@ import scala.language.experimental.macros
 /**
  * Created by tim on 18.04.16.
  */
-trait MongoRecord {
+trait MongoRecord extends Lexis {
 
   def classAsString[C](c: C):String
 
@@ -34,23 +34,8 @@ trait MongoRecord {
    * @return
    */
   def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
-
-  trait Make[C] extends WO[C] {
-    val collection_name:String
-    override def toString:String = collection_name
-    def insert(c: C):InsertResult[C] = InsertResult(this, c, classAsString)
-    def isValid(c: C):Boolean = true
-    def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
-    def as(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
-    def copy(collection_name: String = this.collection_name):Make[C] =  new Make[C] {
-      override val collection_name: String = collection_name
-    }
-  }
-
-
+  
 }
-
-trait WO[C]
 
 object MongoRecord extends UtilsMacro {
 
@@ -70,7 +55,7 @@ object MongoRecord extends UtilsMacro {
 
     fields = q"val collection_name = $collection_name" ::fields
 
-    q"new Make[$tpe] { ..$fields }"
+    q"new Meta[$tpe] { ..$fields }"
 
   }
 

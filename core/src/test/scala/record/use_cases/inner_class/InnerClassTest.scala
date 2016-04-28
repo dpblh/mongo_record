@@ -12,23 +12,21 @@ case class Address(street: String)
 
 class InnerClassTest extends FreeSpec with Matchers with MongoRecordImpl {
 
-  object person extends Make[Person] { self =>
+  object person extends Meta[Person] { self =>
     override val collection_name: String = "person"
     object id extends StringField("id", this)
     object email extends StringField("email", this)
 
-    object personData extends UField[Person, PersonData]("person_data", this) {
+    object personData extends InnerField[Person, PersonData]("person_data", this) {
       object firstName extends StringField("firstName", this)
       object lastName extends StringField("lastName", this)
 
-      object address extends UField[Person, Address]("address", this) {
+      object address extends InnerField[Person, Address]("address", this) {
         object street extends StringField("street", this)
       }
     }
 
   }
-
-//  Person("", "", PersonData("")).copy()
 
 
   println(from(person) { p =>
