@@ -35,19 +35,22 @@ trait MongoRecord {
    */
   def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
 
-
-  trait Make[C] {
+  trait Make[C] extends WO[C] {
     val collection_name:String
     override def toString:String = collection_name
     def insert(c: C):InsertResult[C] = InsertResult(this, c, classAsString)
     def isValid(c: C):Boolean = true
     def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
     def as(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
-
+    def copy(collection_name: String = this.collection_name):Make[C] =  new Make[C] {
+      override val collection_name: String = collection_name
+    }
   }
 
 
 }
+
+trait WO[C]
 
 object MongoRecord extends UtilsMacro {
 

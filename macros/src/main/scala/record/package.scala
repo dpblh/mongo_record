@@ -166,10 +166,10 @@ package object record {
    * @tparam F field
    */
   // implicit where
-  trait Field[C, F] {
+  trait Field[C, F] extends WO[C] {
 
     val fieldName: String
-    val collection: MongoRecord#Make[C]
+    val collection: WO[C]
 
     def ===(right: F) = BooleanExpression(this, right, "eq")
 
@@ -185,13 +185,18 @@ package object record {
 
     def :=(right: F) = SetExpression(this, right)
 
-    override def toString: String = fieldName
+    override def toString: String = {
+      collection match {
+        case x: MongoRecord#Make[C] => fieldName
+        case x: Field[C, _] => x+"."+fieldName
+      }
+    }
 
   }
 
-  case class UField[C, F](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, F]
-  case class StringField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, String]
-  case class IntField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, Int]
-  case class LongField[C](fieldName: String, collection: MongoRecord#Make[C]) extends Field[C, Long]
+  case class UField[C, F](fieldName: String, collection: WO[C]) extends Field[C, F]
+  case class StringField[C](fieldName: String, collection: WO[C]) extends Field[C, String]
+  case class IntField[C](fieldName: String, collection: WO[C]) extends Field[C, Int]
+  case class LongField[C](fieldName: String, collection: WO[C]) extends Field[C, Long]
 
 }
