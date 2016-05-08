@@ -1,28 +1,31 @@
 package migration
 
-import org.scalatest.{FreeSpec, Matchers}
+import com.mongodb.casbah.MongoConnection
+import org.scalatest.{Matchers, FreeSpec}
+import record.{MongoRecordImpl, MongoRecord}
+import com.mongodb.casbah.Imports._
+import MongoRecord._
 /**
  * Created by tim on 07.05.16.
  */
 
-class SimpleMigrationStore(store: scala.collection.mutable.ArrayBuffer[(Long, String, String)]) extends MigrationStore {
+class MongoMigrationStore(db: MongoDB) extends MigrationStore {
+  val versions = db("versions")
   def migrations() = {
-    store.map { e =>
-      Class.forName(e._3.asInstanceOf[String]).newInstance().asInstanceOf[Migration]
+    versions.map { e =>
+      Class.forName(e("className").asInstanceOf[String]).newInstance().asInstanceOf[Migration]
     }.toList
   }
   def remove(migration: Migration) = {
-    store.find(_._1 == migration.timestamp) match {
-      case Some(x) =>  store -= x
-    }
+    versions.remove(Map("_id" -> migration.timestamp))
   }
   def save(migration: Migration) = {
-    store += ((migration.timestamp, migration.author, migration.className))
+    versions.insert(Map("_id" -> migration.timestamp, "author" -> migration.author, "className" -> migration.className))
   }
 }
 
-object SimpleMigrationStore {
-  def apply(store: scala.collection.mutable.ArrayBuffer[(Long, String, String)]) = new SimpleMigrationStore(store)
+object MongoMigrationStore {
+  def apply(db: MongoDB) = new MongoMigrationStore(db)
 }
 
 class Migration1 extends Migration {
@@ -42,27 +45,28 @@ class Migration3 extends Migration {
 
 class MigrationTest extends FreeSpec with Matchers {
 
-  val versions = scala.collection.mutable.ArrayBuffer[(Long, String, String)]()
+  val db = MongoConnection()("migration_test")
+  val versions = db("versions")
 
-  val migration = MigrationRunner(SimpleMigrationStore(versions))
+  val migration = MigrationRunner(MongoMigrationStore(db))
 
 
-  versions.clear()
+  versions.dropCollection()
 
-  versions.length shouldBe 0
+  versions.count() shouldBe 0
 
   migration.run()
 
-  versions.length shouldBe 3
+  versions.count() shouldBe 3
 
   migration.prev()
 
-  versions.length shouldBe 2
+  versions.count() shouldBe 2
 
   migration.prev(Some("05-05-2016 12:29"))
 
-  versions.length shouldBe 0
+  versions.count() shouldBe 0
 
-  versions.clear()
+  versions.dropCollection()
 
 }
