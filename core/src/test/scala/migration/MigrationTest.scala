@@ -1,10 +1,8 @@
 package migration
 
-import com.mongodb.casbah.MongoConnection
-import org.scalatest.{Matchers, FreeSpec}
-import record.{MongoRecordImpl, MongoRecord}
 import com.mongodb.casbah.Imports._
-import MongoRecord._
+import com.mongodb.casbah.MongoConnection
+import org.scalatest.{FreeSpec, Matchers}
 /**
  * Created by tim on 07.05.16.
  */
