@@ -24,14 +24,13 @@ object Builds extends Build {
     file("."),
     settings = buildSettings
   )
-    .aggregate(core, macros)
+    .aggregate(core, macros, casbah_migration)
 
   lazy val core = Project(id = "core",
     base = file("core"))
     .settings(
       libraryDependencies := Seq(
-        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-        "org.mongodb" % "casbah_2.11" % "2.8.0"
+        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
       )
     )
     .dependsOn(macros)
@@ -43,8 +42,18 @@ object Builds extends Build {
         "org.scala-lang" % "scala-reflect" % scalaV,
         "org.scala-lang" % "scala-compiler" % scalaV,
         "org.reflections" % "reflections" % "0.9.9-RC1",
+        "org.slf4j" % "slf4j-api" % "1.7.7"
+      )
+    )
+
+  lazy val casbah_migration = Project(id = "casbah_migration",
+    base = file("casbah_migration"))
+    .settings(
+      libraryDependencies := Seq(
+        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
         "org.mongodb" % "casbah_2.11" % "2.8.0"
       )
     )
+    .dependsOn(core, macros)
 
 }
