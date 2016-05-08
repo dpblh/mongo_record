@@ -4,7 +4,7 @@ import sbtassembly.AssemblyKeys._
 
 object Builds extends Build {
 
-  val scalaV = "2.11.7"
+  val scalaV = "2.11.8"
   val NAME = "mongo_record"
 
   javacOptions ++= Seq("-encoding", "UTF-8")
@@ -30,7 +30,8 @@ object Builds extends Build {
     base = file("core"))
     .settings(
       libraryDependencies := Seq(
-        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
+        "org.mongodb" % "casbah_2.11" % "2.8.0"
       )
     )
     .dependsOn(macros)
@@ -40,7 +41,9 @@ object Builds extends Build {
     .settings(
       libraryDependencies := Seq(
         "org.scala-lang" % "scala-reflect" % scalaV,
-        "org.scala-lang" % "scala-compiler" % scalaV
+        "org.scala-lang" % "scala-compiler" % scalaV,
+        "org.reflections" % "reflections" % "0.9.9-RC1",
+        "org.mongodb" % "casbah_2.11" % "2.8.0"
       )
     )
 

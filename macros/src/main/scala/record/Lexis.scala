@@ -5,9 +5,7 @@ package record
  */
 trait Lexis {
 
-  this: {
-    def classAsString[C](c: C):String
-  } =>
+  def classAsString[C](c: C):String
 
   type M = Meta[_]
 

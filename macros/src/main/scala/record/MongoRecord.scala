@@ -8,8 +8,6 @@ import scala.language.experimental.macros
  */
 trait MongoRecord extends Lexis {
 
-  def classAsString[C](c: C):String
-
   /**
    * просто карринг. для установки базового типа
    * @param c
