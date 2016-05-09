@@ -60,28 +60,13 @@ trait Lexis {
       val update = s.flatten.filter(_._1 != "WhereExpression")
       val r = update.map {
         s => s._1 match {
-          case "SetExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[SetExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$set: {%s}".format(e.mkString(", "))
-          case "MinExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[MinExpression[_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$min: {%s}".format(e.mkString(", "))
-
-          case "MaxExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[MaxExpression[_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$max: {%s}".format(e.mkString(", "))
-          case "RenameExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[RenameExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$rename: {%s}".format(e.mkString(", "))
-          case "IncExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[IncExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$inc: {%s}".format(e.mkString(", "))
-          case "MulExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[MulExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
-            "$mul: {%s}".format(e.mkString(", "))
-          case "UnsetExpression" =>
-            val e = s._2.map { a => a.asInstanceOf[UnsetExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:''" }
-            "$unset: {%s}".format(e.mkString(", "))
+          case "SetExpression" => SetExpression.toString(s._2)
+          case "MinExpression" => MinExpression.toString(s._2)
+          case "MaxExpression" => MaxExpression.toString(s._2)
+          case "RenameExpression" => RenameExpression.toString(s._2)
+          case "IncExpression" => IncExpression.toString(s._2)
+          case "MulExpression" => MulExpression.toString(s._2)
+          case "UnsetExpression" => UnsetExpression.toString(s._2)
         }
       }
       "db.%s.update(%s, {%s})".format(c, where, r.mkString(", "))
@@ -90,6 +75,8 @@ trait Lexis {
 
   case class WhereExpression[C](c: Expression[C]) extends Query with Update[C] {
     val parent = null
+    val left = null
+    val right = null
     def select[S <: Meta[C]](c1: S) = {
       SelectEntity(c, c1)
     }
@@ -191,6 +178,9 @@ trait Lexis {
 
   trait Update[C] {
     val parent:Update[C]
+    val left: Field[C, _]
+    val right: Any
+    override def toString:String = s"${left.toString} : '${right.toString}'"
     def set[F](left: Field[C, F], right: F):Update[C] = SetExpression(this, left, right)
     def unset(left: Field[C, _]):Update[C] = UnsetExpression(this, left)
     def inc(left: Field[C, Int], right: Int):Update[C] = IncExpression(this, left, right)
@@ -211,45 +201,60 @@ trait Lexis {
     }
   }
 
-  case class SetExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class SetExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+  object SetExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$set: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
-  case class IncExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class IncExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+
+  object IncExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$inc: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
-  case class MulExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class MulExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+
+  object MulExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$mul: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
-  case class RenameExpression[C, F](parent: Update[C], left: Field[C, F], right: String) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class RenameExpression[C, F](parent: Update[C], left: Field[C, F], right: String) extends Update[C]
+
+  object RenameExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$rename: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
   case class UnsetExpression[C, F](parent: Update[C], left: Field[C, F]) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : 1"
+    override val right = ""
+  }
+
+  object UnsetExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$unset: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
-  case class MinExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class MinExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C]
+
+  object MinExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$min: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
-  case class MaxExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C] {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
+  case class MaxExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C]
+
+  object MaxExpression {
+    def toString(list: List[Update[_]]):String = {
+      "$max: {" +list.reverse.mkString(", ") + "}"
     }
   }
 
