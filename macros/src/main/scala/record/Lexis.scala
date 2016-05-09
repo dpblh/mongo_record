@@ -55,18 +55,25 @@ trait Lexis {
   }
 
   case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query {
+    private val setExpression = classOf[SetExpression[_,_]]
+    private val minExpression = classOf[MinExpression[_]]
+    private val maxExpression = classOf[MaxExpression[_]]
+    private val renameExpression = classOf[RenameExpression[_,_]]
+    private val incExpression = classOf[IncExpression[_,_]]
+    private val mulExpression = classOf[MulExpression[_,_]]
+    private val unsetExpression = classOf[UnsetExpression[_,_]]
     override def toString: String = {
-      val where = s.flatten.get("WhereExpression").get.head
-      val update = s.flatten.filter(_._1 != "WhereExpression")
+      val where = s.flatten.get(classOf[WhereExpression[_]]).get.head
+      val update = s.flatten.filter(_._1 != classOf[WhereExpression[_]])
       val r = update.map {
         s => s._1 match {
-          case "SetExpression" => SetExpression.toString(s._2)
-          case "MinExpression" => MinExpression.toString(s._2)
-          case "MaxExpression" => MaxExpression.toString(s._2)
-          case "RenameExpression" => RenameExpression.toString(s._2)
-          case "IncExpression" => IncExpression.toString(s._2)
-          case "MulExpression" => MulExpression.toString(s._2)
-          case "UnsetExpression" => UnsetExpression.toString(s._2)
+          case `setExpression` => SetExpression.toString(s._2)
+          case `minExpression` => MinExpression.toString(s._2)
+          case `maxExpression` => MaxExpression.toString(s._2)
+          case `renameExpression` => RenameExpression.toString(s._2)
+          case `incExpression` => IncExpression.toString(s._2)
+          case `mulExpression` => MulExpression.toString(s._2)
+          case `unsetExpression` => UnsetExpression.toString(s._2)
         }
       }
       "db.%s.update(%s, {%s})".format(c, where, r.mkString(", "))
@@ -188,7 +195,7 @@ trait Lexis {
     def rename[F](left: Field[C, F], right: String):Update[C] = RenameExpression(this, left, right)
     def min(left: Field[C, Int], right: Int):Update[C] = MinExpression(this, left, right)
     def max(left: Field[C, Int], right: Int):Update[C] = MaxExpression(this, left, right)
-    def flatten:Map[String, List[Update[C]]] = {
+    def flatten:Map[Class[_ <: Update[_]], List[Update[C]]] = {
 
       val parents = scala.collection.mutable.ArrayBuffer[Update[C]](this)
       var p = this
@@ -197,14 +204,14 @@ trait Lexis {
         parents += p.parent
         p = p.parent
       }
-      parents.toList.groupBy(_.getClass.getSimpleName)
+      parents.toList.groupBy(_.getClass)
     }
   }
 
   case class SetExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
   object SetExpression {
     def toString(list: List[Update[_]]):String = {
-      "$set: {" +list.reverse.mkString(", ") + "}"
+      "$set: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -212,7 +219,7 @@ trait Lexis {
 
   object IncExpression {
     def toString(list: List[Update[_]]):String = {
-      "$inc: {" +list.reverse.mkString(", ") + "}"
+      "$inc: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -220,7 +227,7 @@ trait Lexis {
 
   object MulExpression {
     def toString(list: List[Update[_]]):String = {
-      "$mul: {" +list.reverse.mkString(", ") + "}"
+      "$mul: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -228,7 +235,7 @@ trait Lexis {
 
   object RenameExpression {
     def toString(list: List[Update[_]]):String = {
-      "$rename: {" +list.reverse.mkString(", ") + "}"
+      "$rename: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -238,7 +245,7 @@ trait Lexis {
 
   object UnsetExpression {
     def toString(list: List[Update[_]]):String = {
-      "$unset: {" +list.reverse.mkString(", ") + "}"
+      "$unset: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -246,7 +253,7 @@ trait Lexis {
 
   object MinExpression {
     def toString(list: List[Update[_]]):String = {
-      "$min: {" +list.reverse.mkString(", ") + "}"
+      "$min: {" +list.mkString(", ") + "}"
     }
   }
 
@@ -254,7 +261,7 @@ trait Lexis {
 
   object MaxExpression {
     def toString(list: List[Update[_]]):String = {
-      "$max: {" +list.reverse.mkString(", ") + "}"
+      "$max: {" +list.mkString(", ") + "}"
     }
   }
 

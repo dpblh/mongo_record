@@ -16,9 +16,9 @@ class MongoRecordTest extends FreeSpec with Matchers {
 
   Person.person.insert(Person("id", "tim", "bay", 23)).toString.replaceAll("\\s", "") shouldBe """db.person.insert({'name': 'tim', 'fio': 'bay', 'age': 23})""".replaceAll("\\s", "")
 
-  Person.updated.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$set: {name : 'ivan', age : '22'}})".replaceAll("\\s", "")
+  Person.updated.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$set: {age : '22', name : 'ivan'}})".replaceAll("\\s", "")
 
-  Person.updatedMix.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$min: {age:'12'}, $inc: {age:'2'}, $rename: {name:'lastName'}, $mul: {age:'3'}, $unset: {name:''}, $set: {name:'ivan', age:'13'}, $max: {age:'3'}})".replaceAll("\\s", "")
+  Person.updatedMix.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$max: {age : '3'}, $min: {age : '12'}, $inc: {age : '2'}, $rename: {name : 'lastName'}, $mul: {age : '3'}, $set: {age : '13', name : 'ivan'}, $unset: {name : ''}})".replaceAll("\\s", "")
 
   Person.totalAge.toString.replaceAll("\\s", "") shouldBe "db.person.mapReduce(function(e){emit(e.name, e.age)}, function(key, values){Array.sum(values)})".replaceAll("\\s", "")
 
