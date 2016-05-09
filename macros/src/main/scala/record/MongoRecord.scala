@@ -23,8 +23,6 @@ trait MongoRecord extends Lexis {
 
   def update[T <: M](c: T)(c1: T => Update[_]): UpdateResult[T] = UpdateResult(c, c1(c))
 
-  def mapReduce[T <: M](c: T)(c1: T => Reduce[_]): MapReduceResult[T] = MapReduceResult(c, c1(c))
-
   /**
    * predicate builder
    * @param c

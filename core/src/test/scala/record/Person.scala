@@ -68,14 +68,6 @@ object Person extends MongoRecordImpl {
       .max(s.age, 3)
   }
 
-  val totalAge = mapReduce(person) { s =>
-    where(s.name === "tim") emit(s.name, s.age) sum
-  }
-
-  val maxAge = mapReduce(person) { s =>
-    where(s.name === "tim") emit(s.name, s.age) max
-  }
-
   val joined = join(person, token) { (p, t) =>
     where(p.name === "tim") on(p.id === t.person_id)
   }

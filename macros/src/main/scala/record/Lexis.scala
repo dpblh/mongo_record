@@ -32,12 +32,6 @@ trait Lexis {
     }
   }
 
-  case class MapReduceResult[T <: M](c: T, s: Reduce[_]) extends Query {
-    override def toString: String = {
-      "db.%s.mapReduce(%s)".format(c, s)
-    }
-  }
-
   case class SelectResult[T <: M](c: T, s: SelectExpression) extends Query {
     override def toString: String = MongoBuilder.buildSelectResultAsString(this)
   }
@@ -73,32 +67,6 @@ trait Lexis {
 
     def on[C1, F](f: => Join[C, C1, F]): Join[C, C1, F] = f
 
-    def emit[K, V](key: Field[C, K], value: Field[C, V]) = Emit(key, value)
-
-  }
-
-  case class Emit[C, K, V](key: Field[C, K], value: Field[C, V]) {
-    def sum = Sum(this, value)
-
-    def max = Max(this, value)
-
-    override def toString: String = {
-      "emit(e.%s, e.%s)".format(key, value)
-    }
-  }
-
-  trait Reduce[C]
-
-  case class Max[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
-    override def toString: String = {
-      "function(e){%s}, function(key, values){Array.max(values)}".format(e)
-    }
-  }
-
-  case class Sum[C, V](e: Emit[C, _, V], value: Field[C, V]) extends Reduce[C] {
-    override def toString: String = {
-      "function(e){%s}, function(key, values){Array.sum(values)}".format(e)
-    }
   }
 
   trait Query
@@ -225,7 +193,7 @@ trait Lexis {
 
     def buildSelectResultAsString(s: SelectResult[_]) = {
       val fields = buildSelectFields(s.s)
-      val condition = buildConditionAsString(s.s.w)
+      val condition = buildCondition(s.s.w).toString
       val collection = s.c
       if (fields.keySet().isEmpty) {
         "db.%s.find(%s)".format(collection, condition)
@@ -236,7 +204,7 @@ trait Lexis {
 
     def buildUpdateResultAsString(u: UpdateResult[_]) = {
       val collection = u.c
-      val condition = buildConditionAsString(u.s.condition.c)
+      val condition = buildCondition(u.s.condition.c).toString
       val modify = buildModify(u.s)
       "db.%s.update(%s, %s)".format(collection, condition, modify)
     }
@@ -254,10 +222,8 @@ trait Lexis {
       dbList
     }
 
-    def buildJoinAsString(joins: List[join]):String = buildJoin(joins).toString
-
     def buildJoinResultAsString(join: JoinResult[_,_]):String = {
-      "db.%s.aggregate(%s)".format(join.c, buildJoinAsString((join.joined.stack :+ join.joined).toList))
+      "db.%s.aggregate(%s)".format(join.c, buildJoin((join.joined.stack :+ join.joined).toList).toString)
     }
 
     def buildModify(modify: update):DBObject = {
@@ -304,7 +270,6 @@ trait Lexis {
       }
     }
 
-    def buildConditionAsString(predicate: Expression[_]):String = buildCondition(predicate).toString
   }
 
 }
