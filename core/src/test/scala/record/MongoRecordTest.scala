@@ -18,6 +18,8 @@ class MongoRecordTest extends FreeSpec with Matchers {
 
   Person.updated.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$set: {name : 'ivan', age : '22'}})".replaceAll("\\s", "")
 
+  Person.updatedMix.toString.replaceAll("\\s", "") shouldBe "db.person.update({age : '23'}, {$min: {age:'12'}, $inc: {age:'2'}, $rename: {name:'lastName'}, $mul: {age:'3'}, $unset: {name:''}, $set: {name:'ivan', age:'13'}, $max: {age:'3'}})".replaceAll("\\s", "")
+
   Person.totalAge.toString.replaceAll("\\s", "") shouldBe "db.person.mapReduce(function(e){emit(e.name, e.age)}, function(key, values){Array.sum(values)})".replaceAll("\\s", "")
 
   Person.maxAge.toString.replaceAll("\\s", "") shouldBe "db.person.mapReduce(function(e){emit(e.name, e.age)}, function(key, values){Array.max(values)})".replaceAll("\\s", "")

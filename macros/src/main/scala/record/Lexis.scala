@@ -54,29 +54,48 @@ trait Lexis {
     }
   }
 
-  case class UpdateResult[T <: M](c: T, s: UpdateExpression[T]) extends Query {
+  case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query {
     override def toString: String = {
-      "db.%s.update(%s)".format(c, s)
+      val where = s.flatten.get("WhereExpression").get.head
+      val update = s.flatten.filter(_._1 != "WhereExpression")
+      val r = update.map {
+        s => s._1 match {
+          case "SetExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[SetExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$set: {%s}".format(e.mkString(", "))
+          case "MinExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[MinExpression[_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$min: {%s}".format(e.mkString(", "))
+
+          case "MaxExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[MaxExpression[_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$max: {%s}".format(e.mkString(", "))
+          case "RenameExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[RenameExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$rename: {%s}".format(e.mkString(", "))
+          case "IncExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[IncExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$inc: {%s}".format(e.mkString(", "))
+          case "MulExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[MulExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:'${a.right.toString}'" }
+            "$mul: {%s}".format(e.mkString(", "))
+          case "UnsetExpression" =>
+            val e = s._2.map { a => a.asInstanceOf[UnsetExpression[_,_]] }.reverse.map { a => s"${a.left.toString}:''" }
+            "$unset: {%s}".format(e.mkString(", "))
+        }
+      }
+      "db.%s.update(%s, {%s})".format(c, where, r.mkString(", "))
     }
   }
 
-  case class UpdateExpression[T <: M](w: Expression[_], c: Seq[SetExpression[_, _]]) extends Query {
-    override def toString: String = {
-      """{%s}, { $set : {%s} }""".format(w, c.mkString(", "))
-    }
-  }
-
-  case class WhereExpression[C](c: Expression[C]) extends Query {
+  case class WhereExpression[C](c: Expression[C]) extends Query with Update[C] {
+    val parent = null
     def select[S <: Meta[C]](c1: S) = {
       SelectEntity(c, c1)
     }
 
     def select(c1: Field[C, _]*) = {
       SelectFields(c, c1)
-    }
-
-    def set[S <: Meta[C]](update: SetExpression[C, _]*): UpdateExpression[S] = {
-      UpdateExpression[S](c, update)
     }
 
     def on[C1, F](f: => Join[C, C1, F]): Join[C, C1, F] = f
@@ -148,12 +167,6 @@ trait Lexis {
     }
   }
 
-  case class SetExpression[C, F](left: Field[C, F], right: F) extends Query {
-    override def toString: String = {
-      s"${left.toString} : '${right.toString}'"
-    }
-  }
-
   case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], stack: Seq[Join[_, _, _]]) extends Query {
     def on[C2](f: => Join[C, C2, F]) = this.copy(stack = stack :+ f)
 
@@ -174,6 +187,70 @@ trait Lexis {
 
   case class InsertResult[C](t: Meta[C], c: C, f: C => String) extends Query {
     override def toString: String = "db.%s.insert(%s)".format(t.collection_name, f(c))
+  }
+
+  trait Update[C] {
+    val parent:Update[C]
+    def set[F](left: Field[C, F], right: F):Update[C] = SetExpression(this, left, right)
+    def unset(left: Field[C, _]):Update[C] = UnsetExpression(this, left)
+    def inc(left: Field[C, Int], right: Int):Update[C] = IncExpression(this, left, right)
+    def mul(left: Field[C, Int], right: Int):Update[C] = MulExpression(this, left, right)
+    def rename[F](left: Field[C, F], right: String):Update[C] = RenameExpression(this, left, right)
+    def min(left: Field[C, Int], right: Int):Update[C] = MinExpression(this, left, right)
+    def max(left: Field[C, Int], right: Int):Update[C] = MaxExpression(this, left, right)
+    def flatten:Map[String, List[Update[C]]] = {
+
+      val parents = scala.collection.mutable.ArrayBuffer[Update[C]](this)
+      var p = this
+
+      while (p.parent != null) {
+        parents += p.parent
+        p = p.parent
+      }
+      parents.toList.groupBy(_.getClass.getSimpleName)
+    }
+  }
+
+  case class SetExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
+  }
+
+  case class IncExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
+  }
+
+  case class MulExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
+  }
+
+  case class RenameExpression[C, F](parent: Update[C], left: Field[C, F], right: String) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
+  }
+
+  case class UnsetExpression[C, F](parent: Update[C], left: Field[C, F]) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : 1"
+    }
+  }
+
+  case class MinExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
+  }
+
+  case class MaxExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C] {
+    override def toString: String = {
+      s"${left.toString} : '${right.toString}'"
+    }
   }
 
   /**
@@ -198,8 +275,6 @@ trait Lexis {
     def >=(right: F) = BooleanExpression(this, right, "gte")
 
     def <=(right: F) = BooleanExpression(this, right, "lte")
-
-    def :=(right: F) = SetExpression(this, right)
 
     override def toString: String = {
       collection match {

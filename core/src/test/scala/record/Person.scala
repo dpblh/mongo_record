@@ -53,7 +53,19 @@ object Person extends MongoRecordImpl {
   }
 
   val updated = update(person) { s =>
-    where(s.age === 23) set(s.name := "ivan", s.age := 22)
+    where(s.age === 23) set(s.name, "ivan") set(s.age, 22)
+  }
+
+  val updatedMix = update(person) { s =>
+    where(s.age === 23)
+      .set(s.name, "ivan")
+      .set(s.age, 13)
+      .inc(s.age, 2)
+      .mul(s.age, 3)
+      .rename(s.name, "lastName")
+      .unset(s.name)
+      .min(s.age, 12)
+      .max(s.age, 3)
   }
 
   val totalAge = mapReduce(person) { s =>
