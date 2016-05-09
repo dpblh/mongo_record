@@ -43,7 +43,8 @@ object Builds extends Build {
         "org.scala-lang" % "scala-reflect" % scalaV,
         "org.scala-lang" % "scala-compiler" % scalaV,
         "org.reflections" % "reflections" % "0.9.9-RC1",
-        "org.slf4j" % "slf4j-api" % "1.7.7"
+        "org.slf4j" % "slf4j-api" % "1.7.7",
+        "org.mongodb" % "casbah_2.11" % "2.8.0"
       )
     )
 
