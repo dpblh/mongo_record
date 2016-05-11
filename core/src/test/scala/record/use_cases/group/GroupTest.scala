@@ -1,7 +1,5 @@
 package record.use_cases.group
 
-import org.scalatest.{Matchers, FreeSpec}
-import record.MongoRecordImpl
 import record._
 
 /**
@@ -37,11 +35,11 @@ object PersonToken extends MongoRecord {
 }
 
 
-class GroupTest extends FreeSpec with Matchers {
+class GroupTest extends SpecString {
   
   import PersonToken._
 
-  PersonToken.joined.toString.replaceAll("\\s", "") shouldBe
+  yes(PersonToken.joined,
     """
       |db.person.aggregate([{
       | "$lookup": {
@@ -51,8 +49,8 @@ class GroupTest extends FreeSpec with Matchers {
       |   "as": "copies_sold"
       | }
       |}])
-    """.stripMargin.replaceAll("\\s", "")
+    """.stripMargin)
 
-  PersonService.findAnd.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""".replaceAll("\\s", "")
+  yes(PersonService.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
 }

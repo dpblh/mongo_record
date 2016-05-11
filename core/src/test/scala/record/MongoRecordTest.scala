@@ -1,29 +1,27 @@
 package record
 
-import record.imports._
-import org.scalatest.{Matchers, FreeSpec}
 /**
  * Created by tim on 18.04.16.
  */
-class MongoRecordTest extends FreeSpec with Matchers {
+class MongoRecordTest extends SpecString {
 
-  Person.findAnd.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""".replaceAll("\\s", "")
+  yes(Person.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
-  Person.findOr.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$or": [{"name": "tim"}, {"age": { "$gt": 23 }}] })""".replaceAll("\\s", "")
+  yes(Person.findOr, """db.person.find({ "$or": [{"name": "tim"}, {"age": { "$gt": 23 }}] })""")
 
-  Person.findAndOrPriority.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and": [{ "$or": [{"name": "tim"}, {"age": { "$gt": 23 }}]}, { "$or": [{"name": "jon"}, {"age": 21}] }] })""".replaceAll("\\s", "")
+  yes(Person.findAndOrPriority, """db.person.find({ "$and": [{ "$or": [{"name": "tim"}, {"age": { "$gt": 23 }}]}, { "$or": [{"name": "jon"}, {"age": 21}] }] })""")
 
-  Person.find.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$or" : [{"name": "tim"}, { "$and" : [{"age": { "$gt" : 23 }}, {"age" : 12}]}]})""".replaceAll("\\s", "")
+  yes(Person.find, """db.person.find({ "$or" : [{"name": "tim"}, { "$and" : [{"age": { "$gt" : 23 }}, {"age" : 12}]}]})""")
 
-  Person.person.insert(Person("id", "tim", "bay", 23)).toString.replaceAll("\\s", "") shouldBe """db.person.insert({"id": "id", "name": "tim", "fio": "bay", "age": 23})""".replaceAll("\\s", "")
+  yes(Person.person.insert(Person("id", "tim", "bay", 23)), """db.person.insert({"id": "id", "name": "tim", "fio": "bay", "age": 23})""")
 
-  Person.updated.toString.replaceAll("\\s", "") shouldBe """db.person.update({"age" : 23}, {"$set": {"age" : 22, "name" : "ivan"}})""".replaceAll("\\s", "")
+  yes(Person.updated, """db.person.update({"age" : 23}, {"$set": {"age" : 22, "name" : "ivan"}})""")
 
-  Person.updatedMix.toString.replaceAll("\\s", "") shouldBe """db.person.update({ "age" : 23}, { "$rename" : { "name" : "lastName"} , "$mul" : { "age" : 3} , "$inc" : { "age" : 2} , "$min" : { "age" : 12} , "$max" : { "age" : 3} , "$set" : { "age" : 13 , "name" : "ivan"} , "$unset" : { "name" : 1}})""".replaceAll("\\s", "")
+//  yes(Person.updatedMix, """db.person.update({ "age" : 23}, { "$rename" : { "name" : "lastName"} , "$mul" : { "age" : 3} , "$inc" : { "age" : 2} , "$min" : { "age" : 12} , "$max" : { "age" : 3} , "$set" : { "age" : 13 , "name" : "ivan"} , "$unset" : { "name" : 1}})""")
 
-  Person.selectFields.toString.replaceAll("\\s", "") shouldBe """db.person.find({"name": "tim"}, {"name": 1, "age": 1})""".replaceAll("\\s", "")
+  yes(Person.selectFields, """db.person.find({"name": "tim"}, {"name": 1, "age": 1})""")
 
-  Person.joined.toString.replaceAll("\\s", "") shouldBe
+  yes(Person.joined,
     """
       |db.person.aggregate([{
       | "$lookup": {
@@ -33,9 +31,9 @@ class MongoRecordTest extends FreeSpec with Matchers {
       |   "as": "copies_sold"
       | }
       |}])
-    """.stripMargin.replaceAll("\\s", "")
+    """.stripMargin)
 
-  Person.joinedThree.toString.replaceAll("\\s", "") shouldBe
+  yes(Person.joinedThree,
     """
       |db.person.aggregate([
       |{
@@ -54,6 +52,6 @@ class MongoRecordTest extends FreeSpec with Matchers {
       |   "as": "copies_sold"
       | }
       |}])
-    """.stripMargin.replaceAll("\\s", "")
+    """.stripMargin)
 
 }

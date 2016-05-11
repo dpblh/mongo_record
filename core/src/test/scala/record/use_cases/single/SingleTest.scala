@@ -1,7 +1,6 @@
 package record.use_cases.single
 
-import org.scalatest.{Matchers, FreeSpec}
-import record.MongoRecordImpl
+import record.{SpecString, MongoRecordImpl}
 import MongoRecordImpl._
 /**
  * Created by tim on 22.04.16.
@@ -22,13 +21,13 @@ object Person extends Meta[Person] {
 
 }
 
-class SingleTest extends FreeSpec with Matchers {
+class SingleTest extends SpecString {
 
-  Person.findAnd.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""".replaceAll("\\s", "")
+  yes(Person.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
-  Person { p =>
+  yes(Person { p =>
     where(p.name === "tim") select p.name
-  }.toString.replaceAll("\\s", "") shouldBe """db.person.find({"name" : "tim"}, {"name" : 1})""".replaceAll("\\s", "")
+  }, """db.person.find({"name" : "tim"}, {"name" : 1})""")
 
   Person.isValid(Person("", "", "", 17)) shouldBe false
   Person.isValid(Person("", "tim", "", 19)) shouldBe true
