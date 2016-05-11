@@ -24,13 +24,13 @@ object Person extends Meta[Person] {
 
 class SingleTest extends FreeSpec with Matchers {
 
-  Person.findAnd.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $and : [{age: { $gt: '23' }}, {age: { $lt: '12' }}]})".replaceAll("\\s", "")
+  Person.findAnd.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""".replaceAll("\\s", "")
 
   Person { p =>
     where(p.name === "tim") select p.name
-  }.toString.replaceAll("\\s", "") shouldBe "db.person.find({name : 'tim'}, {name : 1})".replaceAll("\\s", "")
+  }.toString.replaceAll("\\s", "") shouldBe """db.person.find({"name" : "tim"}, {"name" : 1})""".replaceAll("\\s", "")
 
   Person.isValid(Person("", "", "", 17)) shouldBe false
-  Person.isValid(Person("", "", "tim", 19)) shouldBe false
+  Person.isValid(Person("", "tim", "", 19)) shouldBe true
 
 }

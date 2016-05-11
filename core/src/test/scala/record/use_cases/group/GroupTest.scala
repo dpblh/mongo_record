@@ -11,7 +11,7 @@ import record._
 case class Person(id: String, name: String, fio: String, age: Int)
 case class Token(person_id: String)
 
-object PersonToken extends MongoRecordImpl {
+object PersonToken extends MongoRecord {
 
   object Token extends Meta[Token] {
     override val collection_name: String = "token"
@@ -44,15 +44,15 @@ class GroupTest extends FreeSpec with Matchers {
   PersonToken.joined.toString.replaceAll("\\s", "") shouldBe
     """
       |db.person.aggregate([{
-      | $lookup: {
-      |   from: "token",
-      |   localField: "id",
-      |   foreignField: "person_id",
-      |   as: "copies_sold"
+      | "$lookup": {
+      |   "from": "token",
+      |   "localField": "id",
+      |   "foreignField": "person_id",
+      |   "as": "copies_sold"
       | }
       |}])
     """.stripMargin.replaceAll("\\s", "")
 
-  PersonService.findAnd.toString.replaceAll("\\s", "") shouldBe "db.person.find({ $and : [{age: { $gt: '23' }}, {age: { $lt: '12' }}]})".replaceAll("\\s", "")
+  PersonService.findAnd.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""".replaceAll("\\s", "")
 
 }

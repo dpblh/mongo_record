@@ -1,13 +1,12 @@
 package record
 
 import com.mongodb.{BasicDBList, BasicDBObject, DBObject, BasicDBObjectBuilder}
+import scala.reflect.runtime.universe._
 
 /**
  * Created by tim on 29.04.16.
  */
 trait Lexis {
-
-  def classAsString[C](c: C):String
 
   type M = Meta[_]
   private val setExpression = classOf[SetExpression[_,_]]
@@ -18,13 +17,12 @@ trait Lexis {
   private val mulExpression = classOf[MulExpression[_,_]]
   private val unsetExpression = classOf[UnsetExpression[_,_]]
 
-
   trait Make[C]
 
   trait Meta[C] extends Make[C] {
     val collection_name:String
     override def toString:String = collection_name
-    def insert(c: C):InsertResult[C] = InsertResult(this, c, classAsString)
+    def insert(c: C)(implicit ev1: TypeTag[C]):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectTypeTag(c)(ev1))
     def isValid(c: C):Boolean = true
     def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
@@ -40,7 +38,7 @@ trait Lexis {
     override def toString: String = MongoBuilder.buildJoinResultAsString(this)
   }
 
-  trait SelectExpression extends Query {
+  trait SelectExpression {
     val w: Expression[_]
   }
 
@@ -52,7 +50,7 @@ trait Lexis {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
   }
 
-  case class WhereExpression[C](c: Expression[C]) extends Query with Update[C] {
+  case class WhereExpression[C](c: Expression[C]) extends Update[C] {
     val parent = null
     val left = null
     val right = null
@@ -69,9 +67,7 @@ trait Lexis {
 
   }
 
-  trait Query
-
-  trait Expression[T] extends Query {
+  trait Expression[T] {
     def &&(r: Expression[T]) = LogicalExpression(this, r, "$and")
 
     def ||(r: Expression[T]) = LogicalExpression(this, r, "$or")
@@ -89,11 +85,11 @@ trait Lexis {
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
 
-  case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], stack: Seq[Join[_, _, _]]) extends Query {
+  case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], stack: Seq[Join[_, _, _]]) {
     def on[C2](f: => Join[C, C2, F]) = this.copy(stack = stack :+ f)
   }
 
-  case class InsertResult[C](t: Meta[C], c: C, f: C => String) extends Query {
+  case class InsertResult[C](t: Meta[C], c: DBObject) extends Query {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
   }
 
@@ -118,7 +114,7 @@ trait Lexis {
         parents += p.parent
         p = p.parent
       }
-      parents.sortBy(_.getClass.getName).toList.groupBy(_.getClass)
+      parents.toList.groupBy(_.getClass).toArray.sortBy(_._1.getClass.getName).toMap
     }
     def condition = flatten(classOf[WhereExpression[C]]).head.asInstanceOf[WhereExpression[C]]
     def modify = flatten.filter( _._1 != classOf[WhereExpression[_]])
@@ -188,7 +184,7 @@ trait Lexis {
     type join = Join[_,_,_]
 
     def buildInsertResultAsString[C](i: InsertResult[C]) = {
-      "db.%s.insert(%s)".format(i.t, i.f(i.c))
+      "db.%s.insert(%s)".format(i.t, i.c.toString)
     }
 
     def buildSelectResultAsString(s: SelectResult[_]) = {

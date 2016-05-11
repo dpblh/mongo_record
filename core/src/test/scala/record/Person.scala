@@ -10,7 +10,7 @@ case class Person(id: String, name: String, fio: String, age: Int)
 case class Token(person_id: String)
 case class PersonFriend(person_id: String)
 
-object Person extends MongoRecordImpl {
+object Person extends MongoRecord {
 //    val person = meta[Person]
 //    val token = meta[Token]
 //    val friend = meta[PersonFriend]

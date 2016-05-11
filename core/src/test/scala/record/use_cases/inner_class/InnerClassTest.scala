@@ -10,7 +10,7 @@ case class Person(id: String, email: String, personData: PersonData)
 case class PersonData(lastName: String, firstName: String)
 case class Address(street: String)
 
-class InnerClassTest extends FreeSpec with Matchers with MongoRecordImpl {
+class InnerClassTest extends FreeSpec with Matchers with MongoRecord {
 
   object person extends Meta[Person] { self =>
     override val collection_name: String = "person"
@@ -29,14 +29,14 @@ class InnerClassTest extends FreeSpec with Matchers with MongoRecordImpl {
   }
 
 
-  println(from(person) { p =>
+  from(person) { p =>
     where(
         p.email === "bajurovt@gmail.com" &&
         p.personData.firstName === "tim" &&
-        p.personData.address.street === "Tver" &&
-        p.personData.address === Address("Tver")
+        p.personData.address.street === "Tver"// &&
+//        p.personData.address === Address("Tver")
     ) select p
-  }.toString.replaceAll("\\s", ""))// shouldBe "db.person.find({ $and: [{email: 'bajurovt@gmail.com'}, 'person_data.firstName': 'tim'] })".replaceAll("\\s", "")
+  }.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.firstName" : "tim"}]} , { "person_data.address.street" : "Tver"}]})""".replaceAll("\\s", "")
 
 
 
