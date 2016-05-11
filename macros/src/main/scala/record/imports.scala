@@ -14,13 +14,13 @@ object imports {
   }
   object ImplDBExecutor extends DBExecutor
 
-  case class MongoRecord(q: Query, db: DBExecutor) {
+  case class MongoRecordReader(q: Query, db: DBExecutor) {
     def fetch = db.fetch(q)
     def fetchOne = db.fetchOne(q)
     def count = db.count(q)
   }
 
-  implicit def query2MongoRecord(q: Query):MongoRecord = MongoRecord(q, ImplDBExecutor)
+  implicit def query2MongoRecord(q: Query):MongoRecordReader = MongoRecordReader(q, ImplDBExecutor)
   implicit def any2typeTag[A: TypeTag](any: AnyRef):TypeTag[A] = typeTag[A]
 
 }

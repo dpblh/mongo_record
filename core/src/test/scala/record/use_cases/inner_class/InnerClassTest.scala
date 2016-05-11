@@ -2,6 +2,7 @@ package record.use_cases.inner_class
 
 import org.scalatest.{Matchers, FreeSpec}
 import record._
+import imports._
 /**
  * Created by tim on 25.04.16.
  */
@@ -33,11 +34,18 @@ class InnerClassTest extends FreeSpec with Matchers with MongoRecord {
     where(
         p.email === "bajurovt@gmail.com" &&
         p.personData.firstName === "tim" &&
-        p.personData.address.street === "Tver"// &&
-//        p.personData.address === Address("Tver")
+        p.personData.address.street === "Tver"
     ) select p
   }.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.firstName" : "tim"}]} , { "person_data.address.street" : "Tver"}]})""".replaceAll("\\s", "")
 
+
+  from(person) { p =>
+    where(
+      p.email === "bajurovt@gmail.com" &&
+        p.personData.firstName === "tim" &&
+        p.personData.address.street === "Tver" &&
+        p.personData.address === Address("Tver")
+    ) select p}.toString.replaceAll("\\s", "") shouldBe """db.person.find({ "$and" : [ { "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.firstName" : "tim"}]} , { "person_data.address.street" : "Tver"}]} , { "person_data.address" : { "street" : "Tver"}}]})""".replaceAll("\\s", "")
 
 
 }

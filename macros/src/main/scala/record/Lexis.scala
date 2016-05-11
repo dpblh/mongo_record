@@ -81,7 +81,9 @@ trait Lexis {
    * @tparam C collection
    * @tparam F field
    */
-  case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String) extends Expression[C]
+  case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String)(implicit ev1: TypeTag[F]) extends Expression[C] {
+    def getRight:Any = DBObjectSerializer.asDBObjectTypeTag(right)(ev1)
+  }
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
 
@@ -89,7 +91,7 @@ trait Lexis {
     def on[C2](f: => Join[C, C2, F]) = this.copy(stack = stack :+ f)
   }
 
-  case class InsertResult[C](t: Meta[C], c: DBObject) extends Query {
+  case class InsertResult[C](t: Meta[C], c: Any) extends Query {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
   }
 
@@ -147,17 +149,17 @@ trait Lexis {
     val fieldName: String
     val collection: Make[C]
 
-    def ===(right: F) = BooleanExpression(this, right, "$eq")
+    def ===(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$eq")(ev1)
 
     def ===[C1](joined: Field[C1, F]) = Join(this, joined, Seq())
 
-    def >(right: F) = BooleanExpression(this, right, "$gt")
+    def >(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$gt")(ev1)
 
-    def <(right: F) = BooleanExpression(this, right, "$lt")
+    def <(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$lt")(ev1)
 
-    def >=(right: F) = BooleanExpression(this, right, "$gte")
+    def >=(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$gte")(ev1)
 
-    def <=(right: F) = BooleanExpression(this, right, "$lte")
+    def <=(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$lte")(ev1)
 
     override def toString: String = {
       collection match {
@@ -257,9 +259,9 @@ trait Lexis {
       predicate match {
         case b: BooleanExpression[_,_] =>
           b.operator match {
-            case "$eq" => builder.append(b.left.toString, b.right).get
+            case "$eq" => builder.append(b.left.toString, b.getRight).get
             case _ => builder.append(
-              b.left.toString, new BasicDBObject(b.operator, b.right)).get
+              b.left.toString, new BasicDBObject(b.operator, b.getRight)).get
           }
         case l: LogicalExpression[_] =>
           builder.append(l.operator, (buildCondition(l.left)::buildCondition(l.right)::Nil).toArray).get

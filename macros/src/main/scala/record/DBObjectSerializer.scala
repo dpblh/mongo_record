@@ -1,14 +1,14 @@
 package record
 
 import java.util.{Calendar, Date}
+import com.mongodb.BasicDBObjectBuilder
 import scala.reflect.runtime.universe._
-import com.mongodb.{BasicDBObjectBuilder, DBObject}
 
 /**
  * Created by tim on 11.05.16.
  */
 object DBObjectSerializer {
-  def asDBObjectTypeTag[T](entity: T)(implicit tag: TypeTag[T]):DBObject = {
+  def asDBObjectTypeTag[T](entity: T)(implicit tag: TypeTag[T]):Any = {
     val mirror = runtimeMirror(entity.getClass.getClassLoader)
 
     def a2dbObject(x: Any, t: Type): Any = {
@@ -37,11 +37,11 @@ object DBObjectSerializer {
       (acc.name.decodedName.toString, returnValue)
     }
 
-    a2dbObject(entity, typeOf[T]).asInstanceOf[DBObject]
+    a2dbObject(entity, typeOf[T])
 
   }
 
-  def asDBObject[A: TypeTag](entity: A):DBObject = asDBObjectTypeTag(entity)(typeTag[A])
+  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectTypeTag(entity)(typeTag[A])
 
   def date_?(`type`: Type): Boolean = dates.exists(_ =:= `type`)
   def primitive_?(`type`: Type): Boolean = primitives.exists(_ =:= `type`)
