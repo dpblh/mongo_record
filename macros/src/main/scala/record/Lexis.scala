@@ -19,16 +19,16 @@ trait Lexis {
 
   trait Make[C]
 
-  trait Meta[C] extends Make[C] {
+  abstract class Meta[C: TypeTag] extends Make[C] {
     val collection_name:String
     override def toString:String = collection_name
-    def insert(c: C)(implicit ev1: TypeTag[C]):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c)(ev1))
+    def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c, typeOf2))
     def isValid(c: C):Boolean = true
-    def apply(c1: this.type => SelectExpression)(implicit ev1: TypeTag[C]): SelectResult[this.type] = SelectResult(this, c1(this), typeOf[C])
+    def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
-//    def typeOf2(implicit t: TypeTag[C]): Type = typeOf[C]
+    def typeOf2: Type = typeOf[C]
   }
 
   case class ConditionResult[T <: M](c: T, condition: WhereExpression[_]) extends Query {
@@ -94,7 +94,7 @@ trait Lexis {
    * @tparam F field
    */
   case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String)(implicit ev1: TypeTag[F]) extends Expression[C] {
-    def getRight:Any = DBObjectSerializer.asDBObjectImplicit(right)(ev1)
+    def getRight:Any = DBObjectSerializer.asDBObjectImplicit(right, typeOf[F])
   }
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
@@ -209,6 +209,7 @@ trait Lexis {
   object MongoBuilder {
 
     type selectFields = SelectFields[_]
+    type selectEntity = SelectEntity[_]
     type update = Update[_]
     type join = Join[_,_,_]
 
@@ -224,12 +225,11 @@ trait Lexis {
       conditionExecute(s.c.toString, buildCondition(s.condition.c))
     }
 
-    def builderSelectResult[F](s: SelectResult[_]):execute = {
-      val fields = s.s match {
-        case e: selectFields => e.c.toList
-        case _ => Nil
+    def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
+      s.s match {
+        case e: selectFields => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), e.c.toList)
+        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), s.c.typeOf2)
       }
-      selectExecute(s.c.toString, buildCondition(s.s.w), (buildSelectFields(s.s), fields), s.tag)
     }
 
     def builderUpdateResult[F](s: UpdateResult[_]):execute = {

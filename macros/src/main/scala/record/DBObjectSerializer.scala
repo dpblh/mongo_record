@@ -16,9 +16,7 @@ object DBObjectSerializer {
 
   def fromDBObjectType(value: Any, tpe: Type):Any = {
     tpe match {
-      case x if isPrimitive(x) =>
-        x
-        dbPrimitive2primitive(value, x)
+      case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
       case x if isDate(x) => any2date(x, value)
       case x =>
         value match {
@@ -39,27 +37,6 @@ object DBObjectSerializer {
         }
     }
 
-//    val classMirror = rm.reflectClass(classTest)
-//    val constructor = tpe.decl(termNames.CONSTRUCTOR).asMethod
-//    val constructorMirror = classMirror.reflectConstructor(constructor)
-//    val constructorArgs = constructor.paramLists.flatten.map(param => {
-//
-//      val name = param.name.toString
-//      val value = m.get(name)
-//
-//      param.typeSignature match {
-//        case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
-//        case x if isDate(x) => any2date(x, value)
-//        case x =>
-//          value match {
-//            case y: BasicDBObject => fromDBObjectType(value.asInstanceOf[BasicDBObject], x)
-//            case y: BasicDBList => basicDBList2list(y, x)
-//            case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: field $name, value $value, type ${param.typeSignature}")
-//          }
-//      }
-//
-//    })
-//    constructorMirror(constructorArgs: _*)
   }
 
   def basicDBList2list(o: BasicDBList, tup: Type):Any = {
@@ -71,7 +48,7 @@ object DBObjectSerializer {
     collection.map( o => fromDBObjectType(o.asInstanceOf[DBObject], tup.typeArgs.head))
   }
 
-  def asDBObjectImplicit[T](entity: T)(implicit tag: TypeTag[T]):Any = {
+  def asDBObjectImplicit[T](entity: T, tup: Type):Any = {
     val mirror = runtimeMirror(entity.getClass.getClassLoader)
 
     def a2dbObject(x: Any, t: Type): Any = {
@@ -100,11 +77,11 @@ object DBObjectSerializer {
       (acc.name.decodedName.toString, returnValue)
     }
 
-    a2dbObject(entity, typeOf[T])
+    a2dbObject(entity, tup)
 
   }
 
-  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity)(typeTag[A])
+  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity, typeOf[A])
 
   def isDate(`type`: Type): Boolean = dates.exists(_ =:= `type`)
   def isPrimitive(`type`: Type): Boolean = {
@@ -148,7 +125,7 @@ object DBObjectSerializer {
 
   val lists = Set(typeOf[List[_]], typeOf[Set[_]], typeOf[Seq[_]])
   val dates = Set(typeOf[Date], typeOf[Calendar])
-  val primitives = Set[Type](typeOf[CharSequence], typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
+  val primitives = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
     typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[Boolean],
     typeOf[Short], typeOf[java.lang.Integer], typeOf[java.lang.Long],
     typeOf[java.lang.Double], typeOf[java.lang.Float],

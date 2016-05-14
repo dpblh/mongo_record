@@ -9,39 +9,38 @@ import scala.collection.mutable
  */
 object imports {
 
-  import scala.reflect.runtime.universe._
-
   object DBAdapter {
     import scala.collection.JavaConversions._
     val mongoClient = new MongoClient()
     val db = mongoClient.getDB("test_record")
     def fetch(query: Query):mutable.Buffer[_] = {
       query.execute match {
-        case selectExecute(collection, condition, select, ev1) =>
-          if (select._1.keySet().isEmpty)
-            db.getCollection(collection).find(condition).toArray.map(DBObjectSerializer.fromDBObjectType(_, ev1))
-          else
-            db.getCollection(collection).find(condition, select._1).toArray.map { dbobject =>
-              dbobject
-              select._2.toList.map { field =>
-                DBObjectSerializer.fromDBObjectType(dbobject.get(field.fieldName), field.typeOf2)
-              }
+        case selectExecute(collection, condition, entityType) =>
+          db.getCollection(collection).find(condition).toArray.map(DBObjectSerializer.fromDBObjectType(_, entityType))
+        case selectFieldsExecute(collection, condition, select, fields) =>
+          db.getCollection(collection).find(condition, select).toArray.map { dbobject =>
+            fields.map { field =>
+              DBObjectSerializer.fromDBObjectType(dbobject.get(field.fieldName), field.typeOf2)
             }
+          }
       }
     }
     def fetchOne(query: Query):Option[_] = {
       query.execute match {
-        case selectExecute(collection, condition, select, ev1) =>
-          if (select._1.keySet().isEmpty)
-            db.getCollection(collection).findOne(condition) match {
-              case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, ev1))
-              case _ => None
-            }
-          else
-            db.getCollection(collection).findOne(condition, select._1) match {
-              case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, ev1))
-              case _ => None
-            }
+        case selectExecute(collection, condition, entityType) =>
+          db.getCollection(collection).findOne(condition) match {
+            case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, entityType))
+            case _ => None
+          }
+        case selectFieldsExecute(collection, condition, select, fields) =>
+          db.getCollection(collection).findOne(condition, select) match {
+            case x: DBObject => Some(
+              fields.map { field =>
+                DBObjectSerializer.fromDBObjectType(x.get(field.fieldName), field.typeOf2)
+              }
+            )
+            case _ => None
+          }
       }
     }
     def update(query: Query, multi: Boolean):Unit = {
@@ -91,6 +90,5 @@ object imports {
   }
 
   implicit def query2MongoRecord(q: Query):MongoRecordReader = MongoRecordReader(q, ImplDBExecutor)
-  implicit def any2typeTag[A: TypeTag](any: AnyRef):TypeTag[A] = typeTag[A]
 
 }
