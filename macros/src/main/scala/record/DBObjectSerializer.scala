@@ -83,16 +83,12 @@ object DBObjectSerializer {
 
   def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity, typeOf[A])
 
-  def isDate(`type`: Type): Boolean = dates.exists(_ =:= `type`)
-  def isPrimitive(`type`: Type): Boolean = {
-    primitives.exists(_ =:= `type`)
-  }
+  def isDate(`type`: Type):       Boolean = dates.exists(_ =:= `type`)
+  def isPrimitive(`type`: Type):  Boolean = primitives.exists(_ =:= `type`)
 
-  def any2DBDate(o: Any):Any = {
-    o match {
-      case x: Date     => x.getTime
-      case x: Calendar => x.getTimeInMillis
-    }
+  def any2DBDate(o: Any):Any = o match {
+    case x: Date     => x.getTime
+    case x: Calendar => x.getTimeInMillis
   }
 
   def dbPrimitive2primitive(o: Any, tup: Type):Any = {

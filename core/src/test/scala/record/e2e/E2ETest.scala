@@ -41,13 +41,21 @@ class E2ETest extends FreeSpec with Matchers {
     where(p.name === "tim") select p
   }.fetch.foreach(println)
 
+  //select field
   Person { p =>
     where(p.name === "tim") select p.name
   }.fetch.foreach(println)
 
+  //inner type
   Person { p =>
     where(p.name === "tim") select p.address
   }.fetch.foreach(println)
+
+  //select fields
+  Person { p =>
+    where(p.name === "tim") select(p.name, p.address)
+  }.fetch.foreach(println)
+
 
   //Some
   Person { p =>
