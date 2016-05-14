@@ -30,6 +30,10 @@ trait Lexis {
     }
   }
 
+  case class ConditionResult[T <: M](c: T, condition: WhereExpression[_]) extends Query {
+    override def execute: execute = MongoBuilder.builderWhereExpression(this)
+  }
+
   case class SelectResult[T <: M](c: T, s: SelectExpression, tag: Type) extends Query {
     override def toString: String = MongoBuilder.buildSelectResultAsString(this)
 
@@ -100,7 +104,7 @@ trait Lexis {
   case class InsertResult[C](t: Meta[C], c: Any) extends Query {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
 
-    override def execute: execute = ???
+    override def execute: execute = MongoBuilder.builderInsertResult(this)
   }
 
   trait Update[C] {
@@ -115,6 +119,7 @@ trait Lexis {
     def rename[F](left: Field[C, F], right: String):Update[C] = RenameExpression(this, left, right)
     def min(left: Field[C, Int], right: Int):Update[C] = MinExpression(this, left, right)
     def max(left: Field[C, Int], right: Int):Update[C] = MaxExpression(this, left, right)
+    //TODO hide private[_]
     def flatten:Map[Class[_ <: Update[_]], List[Update[C]]] = {
 
       val parents = scala.collection.mutable.ArrayBuffer[Update[C]](this)
@@ -195,6 +200,14 @@ trait Lexis {
 
     def buildInsertResultAsString[C](i: InsertResult[C]) = {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
+    }
+
+    def builderInsertResult[F](i: InsertResult[_]):execute = {
+      insertExecute(i.t.toString, i.c.asInstanceOf[DBObject])
+    }
+
+    def builderWhereExpression[F](s: ConditionResult[_]):execute = {
+      conditionExecute(s.c.toString, buildCondition(s.condition.c))
     }
 
     def builderSelectResult[F](s: SelectResult[_]):execute = {

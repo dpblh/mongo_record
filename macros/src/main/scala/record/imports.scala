@@ -45,13 +45,33 @@ object imports {
           db.getCollection(collection).update(condition, update, false, multi)
       }
     }
+    def count(query: Query):Long = {
+      query.execute match {
+        case conditionExecute(collection, condition) =>
+          db.getCollection(collection).count(condition)
+      }
+    }
+    def remove(query: Query):Unit = {
+      query.execute match {
+        case conditionExecute(collection, condition) =>
+          db.getCollection(collection).remove(condition)
+      }
+    }
+    def insert(query: Query):Unit = {
+      query.execute match {
+        case insertExecute(collection, toBeInsert) =>
+          db.getCollection(collection).insert(toBeInsert)
+      }
+    }
   }
 
   class DBExecutor {
     def fetch(query: Query) = DBAdapter.fetch(query)
     def fetchOne(query: Query) = DBAdapter.fetchOne(query)
     def update(query: Query, multi: Boolean = false) = DBAdapter.update(query, multi)
-    def count(query: Query) = ???
+    def count(query: Query) = DBAdapter.count(query)
+    def remove(query: Query) = DBAdapter.remove(query)
+    def insert(query: Query) = DBAdapter.insert(query)
   }
   object ImplDBExecutor extends DBExecutor
 
@@ -61,6 +81,8 @@ object imports {
     def modify() = db.update(q, multi = true)
     def modifyOne() = db.update(q)
     def count = db.count(q)
+    def remove = db.remove(q)
+    def flash = db.insert(q)
   }
 
   implicit def query2MongoRecord(q: Query):MongoRecordReader = MongoRecordReader(q, ImplDBExecutor)
