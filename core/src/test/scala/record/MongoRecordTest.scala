@@ -3,7 +3,7 @@ package record
 /**
  * Created by tim on 18.04.16.
  */
-class MongoRecordTest extends SpecString {
+class MongoRecordTest extends Spec {
 
   yes(Person.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 

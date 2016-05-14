@@ -1,14 +1,55 @@
 package record
 
 import java.util.{Calendar, Date}
-import com.mongodb.BasicDBObjectBuilder
+import com.mongodb._
+import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
 
 /**
  * Created by tim on 11.05.16.
  */
 object DBObjectSerializer {
-  def asDBObjectTypeTag[T](entity: T)(implicit tag: TypeTag[T]):Any = {
+
+  case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
+
+  def fromDBObject[T: TypeTag](m: DBObject):Any = fromDBObjectType(m, typeOf[T])
+
+  def fromDBObjectType(m: DBObject, tpe: Type):Any = {
+    val rm = runtimeMirror(getClass.getClassLoader)
+    val classTest = tpe.typeSymbol.asClass
+    val classMirror = rm.reflectClass(classTest)
+    val constructor = tpe.decl(termNames.CONSTRUCTOR).asMethod
+    val constructorMirror = classMirror.reflectConstructor(constructor)
+    val constructorArgs = constructor.paramLists.flatten.map(param => {
+
+      val name = param.name.toString
+      val value = m.get(name)
+
+      param.typeSignature match {
+        case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
+        case x if isDate(x) => any2date(x, value)
+        case x =>
+          value match {
+            case y: BasicDBObject => fromDBObjectType(value.asInstanceOf[BasicDBObject], x)
+            case y: BasicDBList => basicDBList2list(y, x)
+            case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: field $name, value $value, type ${param.typeSignature}")
+          }
+      }
+
+    })
+    constructorMirror(constructorArgs: _*)
+  }
+
+  def basicDBList2list(o: BasicDBList, tup: Type):Any = {
+    val collection = tup match {
+      case x if tup <:< typeOf[List[_]] => o.toList
+      case x if tup <:< typeOf[Set[_]]=> o.toSet
+      case x if tup <:< typeOf[Seq[_]]=> o.toList
+    }
+    collection.map( o => fromDBObjectType(o.asInstanceOf[DBObject], tup.typeArgs.head))
+  }
+
+  def asDBObjectImplicit[T](entity: T)(implicit tag: TypeTag[T]):Any = {
     val mirror = runtimeMirror(entity.getClass.getClassLoader)
 
     def a2dbObject(x: Any, t: Type): Any = {
@@ -29,8 +70,8 @@ object DBObjectSerializer {
       val value = (xm reflectMethod acc)()
       val returnValue = acc.returnType match {
 
-        case x if primitive_?(x) => value
-        case x if date_?(x) => any2DBDate(value)
+        case x if isPrimitive(x) => value
+        case x if isDate(x) => any2DBDate(value)
         case x => a2dbObject(value, acc.typeSignature)
 
       }
@@ -41,10 +82,10 @@ object DBObjectSerializer {
 
   }
 
-  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectTypeTag(entity)(typeTag[A])
+  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity)(typeTag[A])
 
-  def date_?(`type`: Type): Boolean = dates.exists(_ =:= `type`)
-  def primitive_?(`type`: Type): Boolean = primitives.exists(_ =:= `type`)
+  def isDate(`type`: Type): Boolean = dates.exists(_ =:= `type`)
+  def isPrimitive(`type`: Type): Boolean = primitives.exists(_ =:= `type`)
 
   def any2DBDate(o: Any):Any = {
     o match {
@@ -53,7 +94,35 @@ object DBObjectSerializer {
     }
   }
 
-  val dates = Set(typeOf[Date])
+  def dbPrimitive2primitive(o: Any, tup: Type):Any = {
+    val typeOfInt = typeOf[Int]
+    tup match {
+      case `typeOfInt` =>
+        o match {
+          case y: BigDecimal => y.intValue()
+          case y: Double => y.intValue()
+          case y: java.lang.Integer => y.toInt
+        }
+      case _ => o
+    }
+  }
+
+  def any2date(`type`: Type, o: Any):Any = {
+    val milis = o match {
+      case y: BigDecimal => y.toLong
+      case y: Double => y.toLong
+    }
+    `type` match {
+      case x if x =:= typeOf[Date] => new Date(milis)
+      case x if x =:= typeOf[Calendar] =>
+        val date = Calendar.getInstance()
+        date.setTimeInMillis(milis)
+        date
+    }
+  }
+
+  val lists = Set(typeOf[List[_]], typeOf[Set[_]], typeOf[Seq[_]])
+  val dates = Set(typeOf[Date], typeOf[Calendar])
   val primitives = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
     typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[Boolean],
     typeOf[Short], typeOf[java.lang.Integer], typeOf[java.lang.Long],

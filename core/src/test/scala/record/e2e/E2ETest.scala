@@ -1,8 +1,6 @@
-package record
+package record.e2e
 
-import java.util.Date
-
-import org.scalatest.{Matchers, FreeSpec}
+import org.scalatest.{FreeSpec, Matchers}
 import record.MongoRecord
 import record.imports._
 
@@ -10,11 +8,9 @@ import record.imports._
  * Created by tim on 09.05.16.
  */
 
+case class Person(name: String, age: Int)
+
 class E2ETest extends FreeSpec with Matchers with MongoRecord {
-
-  case class Person(id: String, name: String, age: Int)
-
-  case class Fr(name: String, person: Person, created_at: Date)
 
   object Person extends Meta[Person] {
 
@@ -26,6 +22,6 @@ class E2ETest extends FreeSpec with Matchers with MongoRecord {
 
   Person { p =>
     where(p.name === "tim") select p
-  }.fetch
+  }.fetch.foreach(println)
 
 }

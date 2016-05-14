@@ -10,7 +10,7 @@ case class Person(id: String, email: String, personData: PersonData)
 case class PersonData(lastName: String, firstName: String)
 case class Address(street: String)
 
-class InnerClassTest extends SpecString with MongoRecord {
+class InnerClassTest extends Spec with MongoRecord {
 
   object person extends Meta[Person] { self =>
     override val collection_name: String = "person"

@@ -22,20 +22,24 @@ trait Lexis {
   trait Meta[C] extends Make[C] {
     val collection_name:String
     override def toString:String = collection_name
-    def insert(c: C)(implicit ev1: TypeTag[C]):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectTypeTag(c)(ev1))
+    def insert(c: C)(implicit ev1: TypeTag[C]):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c)(ev1))
     def isValid(c: C):Boolean = true
-    def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this))
+    def apply(c1: this.type => SelectExpression)(implicit ev1: TypeTag[C]): SelectResult[this.type] = SelectResult(this, c1(this), typeOf[C])
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
   }
 
-  case class SelectResult[T <: M](c: T, s: SelectExpression) extends Query {
+  case class SelectResult[T <: M](c: T, s: SelectExpression, tag: Type) extends Query {
     override def toString: String = MongoBuilder.buildSelectResultAsString(this)
+
+    override def execute: execute = MongoBuilder.builderSelectResult(this)
   }
 
   case class JoinResult[T <: M, T1 <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query {
     override def toString: String = MongoBuilder.buildJoinResultAsString(this)
+
+    override def execute: execute = ???
   }
 
   trait SelectExpression {
@@ -48,6 +52,8 @@ trait Lexis {
 
   case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
+
+    override def execute: execute = ???
   }
 
   case class WhereExpression[C](c: Expression[C]) extends Update[C] {
@@ -82,7 +88,7 @@ trait Lexis {
    * @tparam F field
    */
   case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String)(implicit ev1: TypeTag[F]) extends Expression[C] {
-    def getRight:Any = DBObjectSerializer.asDBObjectTypeTag(right)(ev1)
+    def getRight:Any = DBObjectSerializer.asDBObjectImplicit(right)(ev1)
   }
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
@@ -93,6 +99,8 @@ trait Lexis {
 
   case class InsertResult[C](t: Meta[C], c: Any) extends Query {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
+
+    override def execute: execute = ???
   }
 
   trait Update[C] {
@@ -189,6 +197,9 @@ trait Lexis {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
     }
 
+    def builderSelectResult[F](s: SelectResult[_]):execute = {
+      selectExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), s.tag)
+    }
     def buildSelectResultAsString(s: SelectResult[_]) = {
       val fields = buildSelectFields(s.s)
       val condition = buildCondition(s.s.w).toString

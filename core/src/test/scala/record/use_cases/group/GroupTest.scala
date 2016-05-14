@@ -35,7 +35,7 @@ object PersonToken extends MongoRecord {
 }
 
 
-class GroupTest extends SpecString {
+class GroupTest extends Spec {
   
   import PersonToken._
 

@@ -1,6 +1,6 @@
 package record.use_cases.single
 
-import record.{SpecString, MongoRecordImpl}
+import record.{Spec, MongoRecordImpl}
 import MongoRecordImpl._
 /**
  * Created by tim on 22.04.16.
@@ -21,7 +21,7 @@ object Person extends Meta[Person] {
 
 }
 
-class SingleTest extends SpecString {
+class SingleTest extends Spec {
 
   yes(Person.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
