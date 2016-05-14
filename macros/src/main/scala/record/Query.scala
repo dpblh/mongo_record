@@ -10,3 +10,4 @@ trait Query {
 }
 sealed class execute
 case class selectExecute[T](collection: String, condition: DBObject, select: DBObject, ev1: Type) extends execute
+case class updateExecute[T](collection: String, condition: DBObject, update: DBObject) extends execute

@@ -39,11 +39,18 @@ object imports {
             }
       }
     }
+    def update(query: Query, multi: Boolean):Unit = {
+      query.execute match {
+        case updateExecute(collection, condition, update) =>
+          db.getCollection(collection).update(condition, update, false, multi)
+      }
+    }
   }
 
   class DBExecutor {
     def fetch(query: Query) = DBAdapter.fetch(query)
     def fetchOne(query: Query) = DBAdapter.fetchOne(query)
+    def update(query: Query, multi: Boolean = false) = DBAdapter.update(query, multi)
     def count(query: Query) = ???
   }
   object ImplDBExecutor extends DBExecutor
@@ -51,6 +58,8 @@ object imports {
   case class MongoRecordReader(q: Query, db: DBExecutor) {
     def fetch = db.fetch(q)
     def fetchOne = db.fetchOne(q)
+    def modify() = db.update(q, multi = true)
+    def modifyOne() = db.update(q)
     def count = db.count(q)
   }
 

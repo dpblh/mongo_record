@@ -18,6 +18,8 @@ class E2ETest extends FreeSpec with Matchers with MongoRecord {
     object name extends StringField("name", this)
     object age extends IntField("age", this)
 
+    def modify = update(this) _
+
   }
 
   Person { p =>
@@ -33,5 +35,16 @@ class E2ETest extends FreeSpec with Matchers with MongoRecord {
   Person { p =>
     where(p.name === "tim2") select p
   }.fetchOne.foreach(println)
+
+  //update all
+  Person.modify { p =>
+    where(p.name === "tim") set(p.age, 4)
+  }.modify()
+
+  //update one
+  Person.modify { p =>
+    where(p.name === "tim") set(p.age, 5)
+  }.modifyOne()
+
 
 }

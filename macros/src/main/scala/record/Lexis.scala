@@ -53,7 +53,7 @@ trait Lexis {
   case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
 
-    override def execute: execute = ???
+    override def execute: execute = MongoBuilder.builderUpdateResult(this)
   }
 
   case class WhereExpression[C](c: Expression[C]) extends Update[C] {
@@ -200,6 +200,11 @@ trait Lexis {
     def builderSelectResult[F](s: SelectResult[_]):execute = {
       selectExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), s.tag)
     }
+
+    def builderUpdateResult[F](s: UpdateResult[_]):execute = {
+      updateExecute(s.c.toString, buildCondition(s.s.condition.c), buildModify(s.s))
+    }
+
     def buildSelectResultAsString(s: SelectResult[_]) = {
       val fields = buildSelectFields(s.s)
       val condition = buildCondition(s.s.w).toString
