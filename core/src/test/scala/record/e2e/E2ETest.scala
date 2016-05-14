@@ -24,4 +24,14 @@ class E2ETest extends FreeSpec with Matchers with MongoRecord {
     where(p.name === "tim") select p
   }.fetch.foreach(println)
 
+  //Some
+  Person { p =>
+    where(p.name === "tim") select p
+  }.fetchOne.foreach(println)
+
+  //None
+  Person { p =>
+    where(p.name === "tim2") select p
+  }.fetchOne.foreach(println)
+
 }
