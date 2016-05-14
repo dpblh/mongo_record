@@ -14,30 +14,52 @@ object DBObjectSerializer {
 
   def fromDBObject[T: TypeTag](m: DBObject):Any = fromDBObjectType(m, typeOf[T])
 
-  def fromDBObjectType(m: DBObject, tpe: Type):Any = {
-    val rm = runtimeMirror(getClass.getClassLoader)
-    val classTest = tpe.typeSymbol.asClass
-    val classMirror = rm.reflectClass(classTest)
-    val constructor = tpe.decl(termNames.CONSTRUCTOR).asMethod
-    val constructorMirror = classMirror.reflectConstructor(constructor)
-    val constructorArgs = constructor.paramLists.flatten.map(param => {
+  def fromDBObjectType(value: Any, tpe: Type):Any = {
+    tpe match {
+      case x if isPrimitive(x) =>
+        x
+        dbPrimitive2primitive(value, x)
+      case x if isDate(x) => any2date(x, value)
+      case x =>
+        value match {
+          case y: BasicDBList => basicDBList2list(y, x)
+          case y: BasicDBObject =>
+            val rm = runtimeMirror(getClass.getClassLoader)
+            val classTest = tpe.typeSymbol.asClass
+            val classMirror = rm.reflectClass(classTest)
+            val constructor = tpe.decl(termNames.CONSTRUCTOR).asMethod
+            val constructorMirror = classMirror.reflectConstructor(constructor)
+            val constructorArgs = constructor.paramLists.flatten.map { param =>
+              val name = param.name.toString
+              val value = y.get(name)
+              fromDBObjectType(value, param.typeSignature)
+            }
+            constructorMirror(constructorArgs: _*)
+          case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: value $value")
+        }
+    }
 
-      val name = param.name.toString
-      val value = m.get(name)
-
-      param.typeSignature match {
-        case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
-        case x if isDate(x) => any2date(x, value)
-        case x =>
-          value match {
-            case y: BasicDBObject => fromDBObjectType(value.asInstanceOf[BasicDBObject], x)
-            case y: BasicDBList => basicDBList2list(y, x)
-            case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: field $name, value $value, type ${param.typeSignature}")
-          }
-      }
-
-    })
-    constructorMirror(constructorArgs: _*)
+//    val classMirror = rm.reflectClass(classTest)
+//    val constructor = tpe.decl(termNames.CONSTRUCTOR).asMethod
+//    val constructorMirror = classMirror.reflectConstructor(constructor)
+//    val constructorArgs = constructor.paramLists.flatten.map(param => {
+//
+//      val name = param.name.toString
+//      val value = m.get(name)
+//
+//      param.typeSignature match {
+//        case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
+//        case x if isDate(x) => any2date(x, value)
+//        case x =>
+//          value match {
+//            case y: BasicDBObject => fromDBObjectType(value.asInstanceOf[BasicDBObject], x)
+//            case y: BasicDBList => basicDBList2list(y, x)
+//            case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: field $name, value $value, type ${param.typeSignature}")
+//          }
+//      }
+//
+//    })
+//    constructorMirror(constructorArgs: _*)
   }
 
   def basicDBList2list(o: BasicDBList, tup: Type):Any = {
@@ -85,7 +107,9 @@ object DBObjectSerializer {
   def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity)(typeTag[A])
 
   def isDate(`type`: Type): Boolean = dates.exists(_ =:= `type`)
-  def isPrimitive(`type`: Type): Boolean = primitives.exists(_ =:= `type`)
+  def isPrimitive(`type`: Type): Boolean = {
+    primitives.exists(_ =:= `type`)
+  }
 
   def any2DBDate(o: Any):Any = {
     o match {
@@ -103,6 +127,7 @@ object DBObjectSerializer {
           case y: Double => y.intValue()
           case y: java.lang.Integer => y.toInt
         }
+      case x: CharSequence => x.toString
       case _ => o
     }
   }
@@ -123,7 +148,7 @@ object DBObjectSerializer {
 
   val lists = Set(typeOf[List[_]], typeOf[Set[_]], typeOf[Seq[_]])
   val dates = Set(typeOf[Date], typeOf[Calendar])
-  val primitives = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
+  val primitives = Set[Type](typeOf[CharSequence], typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
     typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[Boolean],
     typeOf[Short], typeOf[java.lang.Integer], typeOf[java.lang.Long],
     typeOf[java.lang.Double], typeOf[java.lang.Float],

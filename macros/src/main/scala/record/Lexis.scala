@@ -28,6 +28,7 @@ trait Lexis {
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
+//    def typeOf2(implicit t: TypeTag[C]): Type = typeOf[C]
   }
 
   case class ConditionResult[T <: M](c: T, condition: WhereExpression[_]) extends Query {
@@ -65,6 +66,7 @@ trait Lexis {
     val left = null
     val right = null
     val symbol: String = null
+    //TODO подумать над удалением
     def select[S <: Meta[C]](c1: S) = {
       SelectEntity(c, c1)
     }
@@ -181,14 +183,26 @@ trait Lexis {
       }
     }
 
+    def typeOf2:Type
+
   }
 
-  case class UField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F]
-  case class StringField[C](fieldName: String, collection: Make[C]) extends Field[C, String]
-  case class IntField[C](fieldName: String, collection: Make[C]) extends Field[C, Int]
-  case class LongField[C](fieldName: String, collection: Make[C]) extends Field[C, Long]
+  case class UField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F] {
+    override def typeOf2: Type = ???
+  }
+  case class StringField[C](fieldName: String, collection: Make[C]) extends Field[C, String] {
+    override def typeOf2: Type = typeOf[String]
+  }
+  case class IntField[C](fieldName: String, collection: Make[C]) extends Field[C, Int] {
+    override def typeOf2: Type = typeOf[Int]
+  }
+  case class LongField[C](fieldName: String, collection: Make[C]) extends Field[C, Long] {
+    override def typeOf2: Type = typeOf[Long]
+  }
 
-  case class InnerField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F]
+  case class InnerField[C, F](fieldName: String, collection: Make[C])(implicit t: TypeTag[F]) extends Field[C, F] {
+    override def typeOf2: Type = typeOf[F]
+  }
 
 
 
@@ -211,7 +225,11 @@ trait Lexis {
     }
 
     def builderSelectResult[F](s: SelectResult[_]):execute = {
-      selectExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), s.tag)
+      val fields = s.s match {
+        case e: selectFields => e.c.toList
+        case _ => Nil
+      }
+      selectExecute(s.c.toString, buildCondition(s.s.w), (buildSelectFields(s.s), fields), s.tag)
     }
 
     def builderUpdateResult[F](s: UpdateResult[_]):execute = {

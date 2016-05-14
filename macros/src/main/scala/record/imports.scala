@@ -18,22 +18,27 @@ object imports {
     def fetch(query: Query):mutable.Buffer[_] = {
       query.execute match {
         case selectExecute(collection, condition, select, ev1) =>
-          if (select.keySet().isEmpty)
+          if (select._1.keySet().isEmpty)
             db.getCollection(collection).find(condition).toArray.map(DBObjectSerializer.fromDBObjectType(_, ev1))
           else
-            db.getCollection(collection).find(condition, select).toArray.map(DBObjectSerializer.fromDBObjectType(_, ev1))//TODO field problem
+            db.getCollection(collection).find(condition, select._1).toArray.map { dbobject =>
+              dbobject
+              select._2.toList.map { field =>
+                DBObjectSerializer.fromDBObjectType(dbobject.get(field.fieldName), field.typeOf2)
+              }
+            }
       }
     }
     def fetchOne(query: Query):Option[_] = {
       query.execute match {
         case selectExecute(collection, condition, select, ev1) =>
-          if (select.keySet().isEmpty)
+          if (select._1.keySet().isEmpty)
             db.getCollection(collection).findOne(condition) match {
               case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, ev1))
               case _ => None
             }
           else
-            db.getCollection(collection).findOne(condition, select) match {
+            db.getCollection(collection).findOne(condition, select._1) match {
               case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, ev1))
               case _ => None
             }
