@@ -15,17 +15,15 @@ object Person extends Meta[Person] {
   object name extends StringField("name", this)
   object age extends IntField("age", this)
 
-  val findAnd = from(this) { s =>
-    where(s.age > 23 && s.age < 12) select s
-  }
-
 }
 
 class SingleTest extends Spec {
 
-  yes(Person.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
+  yes(Person.find { s =>
+    where(s.age > 23 && s.age < 12) select s
+  }, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
-  yes(Person { p =>
+  yes(Person.find { p =>
     where(p.name === "tim") select p.name
   }, """db.person.find({"name" : "tim"}, {"name" : 1})""")
 

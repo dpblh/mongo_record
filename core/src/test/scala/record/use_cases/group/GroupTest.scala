@@ -21,11 +21,6 @@ object PersonToken extends MongoRecord {
     object id extends StringField("id", this)
     object name extends StringField("name", this)
     object age extends IntField("age", this)
-    
-    val findAnd = from(this) { s =>
-      where(s.age > 23 && s.age < 12) select s
-    }
-    
   }
 
   val joined = join(PersonService, Token) { (p, t) =>
@@ -51,6 +46,8 @@ class GroupTest extends Spec {
       |}])
     """.stripMargin)
 
-  yes(PersonService.findAnd, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
+  yes(PersonService.find { s =>
+    where(s.age > 23 && s.age < 12) select s
+  }, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
 }

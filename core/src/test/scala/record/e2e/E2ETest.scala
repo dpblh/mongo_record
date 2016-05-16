@@ -20,16 +20,12 @@ object Person extends Meta[Person] {
   object age extends IntField("age", this)
   object address extends InnerField[Person, Address]("address", this)
 
-  def modify = update(this) _
-
-  def predicate = condition(this) _
-
 }
 
 class E2ETest extends FreeSpec with Matchers {
 
-  Person.predicate { p =>
-    where(p.name === "tim")
+  Person.where { p =>
+    p.name === "tim" || p.age > 3
   }.remove
 
   Person("tim", 1, Address("Kal", "Tver")).save
@@ -37,37 +33,37 @@ class E2ETest extends FreeSpec with Matchers {
   Person("tim", 3, Address("Kal", "Tver")).save
   Person.insert(Person("tim", 5, Address("Kalinin", "Tver"))).flash
 
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim") select p
   }.fetch.foreach(println)
 
   //select field
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim") select p.name
   }.fetch.foreach(println)
 
   //inner type
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim") select p.address
   }.fetch.foreach(println)
 
   //select fields
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim") select(p.name, p.address)
   }.fetch.foreach(println)
 
 
   //Some
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim") select p
   }.fetchOne.foreach(println)
 
   //None
-  Person { p =>
+  Person.find { p =>
     where(p.name === "tim2" && p.age > 4) select p
   }.fetchOne.foreach(println)
 
-  Person { p =>
+  Person.find { p =>
     where(p.address === Address("Kalinin", "Tver")) select p
   }.fetch.foreach(println)
 
@@ -81,8 +77,8 @@ class E2ETest extends FreeSpec with Matchers {
     where(p.name === "tim") set(p.age, 5)
   }.modifyOne()
 
-  Person.predicate { p =>
-    where(p.name === "tim")
+  Person.where { p =>
+    p.name === "tim"
   }.count
 
 

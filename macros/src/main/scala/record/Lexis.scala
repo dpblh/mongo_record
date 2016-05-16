@@ -24,14 +24,16 @@ trait Lexis {
     override def toString:String = collection_name
     def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c, typeOf2))
     def isValid(c: C):Boolean = true
-    def apply(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
+    def modify(c1: this.type => Update[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
+    def where(c1: this.type => Expression[C]): ConditionResult[this.type] = ConditionResult(this, c1(this))
+    def find(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
     def typeOf2: Type = typeOf[C]
   }
 
-  case class ConditionResult[T <: M](c: T, condition: WhereExpression[_]) extends Query {
+  case class ConditionResult[T <: M](c: T, condition: Expression[_]) extends Query {
     override def execute: execute = MongoBuilder.builderWhereExpression(this)
   }
 
@@ -222,7 +224,7 @@ trait Lexis {
     }
 
     def builderWhereExpression[F](s: ConditionResult[_]):execute = {
-      conditionExecute(s.c.toString, buildCondition(s.condition.c))
+      conditionExecute(s.c.toString, buildCondition(s.condition))
     }
 
     def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
