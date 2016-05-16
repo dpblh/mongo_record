@@ -15,9 +15,15 @@ object Person extends Meta[Person] {
   object name extends StringField("name", this)
   object age extends IntField("age", this)
 
+  def findThis = find { s =>
+    where(s.age > 23 && s.age < 12) select s
+  }
+
 }
 
 class SingleTest extends Spec {
+
+  yes(Person.findThis, """db.person.find({ "$and" : [{"age": { "$gt": 23 }}, {"age": { "$lt": 12 }}]})""")
 
   yes(Person.find { s =>
     where(s.age > 23 && s.age < 12) select s

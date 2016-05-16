@@ -25,16 +25,14 @@ trait Lexis {
     def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c, typeOf2))
     def isValid(c: C):Boolean = true
     def modify(c1: this.type => Update[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
-    def where(c1: this.type => Expression[C]): ConditionResult[this.type] = ConditionResult(this, c1(this))
+    def where(c1: Expression[C]): WhereExpression[C] = WhereExpression(c1)
+    //TODO подумать на повышение возвращаемого значения. убрать Option[_]
+    def where(c1: this.type => Expression[C]): WhereExpression[C] = WhereExpression(c1(this), Some(this))
     def find(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
     def typeOf2: Type = typeOf[C]
-  }
-
-  case class ConditionResult[T <: M](c: T, condition: Expression[_]) extends Query {
-    override def execute: execute = MongoBuilder.builderWhereExpression(this)
   }
 
   case class SelectResult[T <: M](c: T, s: SelectExpression, tag: Type) extends Query {
@@ -63,22 +61,16 @@ trait Lexis {
     override def execute: execute = MongoBuilder.builderUpdateResult(this)
   }
 
-  case class WhereExpression[C](c: Expression[C]) extends Update[C] {
+  case class WhereExpression[C](c: Expression[C], collection: Option[M] = None) extends Update[C] with Query {
     val parent = null
     val left = null
     val right = null
     val symbol: String = null
     //TODO подумать над удалением
-    def select[S <: Meta[C]](c1: S) = {
-      SelectEntity(c, c1)
-    }
-
-    def select(c1: Field[C, _]*) = {
-      SelectFields(c, c1)
-    }
-
+    def select[S <: Meta[C]](c1: S) = SelectEntity(c, c1)
+    def select(c1: Field[C, _]*) = SelectFields(c, c1)
     def on[C1, F](f: => Join[C, C1, F]): Join[C, C1, F] = f
-
+    override def execute: execute = MongoBuilder.builderWhereExpression(this)
   }
 
   trait Expression[T] {
@@ -223,8 +215,8 @@ trait Lexis {
       insertExecute(i.t.toString, i.c.asInstanceOf[DBObject])
     }
 
-    def builderWhereExpression[F](s: ConditionResult[_]):execute = {
-      conditionExecute(s.c.toString, buildCondition(s.condition))
+    def builderWhereExpression(s: WhereExpression[_]):execute = {
+      conditionExecute(s.collection.toString, buildCondition(s.c))
     }
 
     def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
