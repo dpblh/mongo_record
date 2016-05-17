@@ -27,6 +27,7 @@ trait Lexis {
     def modify(c1: this.type => Update[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
     def where(c1: Expression[C]): WhereExpression[C] = WhereExpression(c1)
     //TODO подумать на повышение возвращаемого значения. убрать Option[_]
+    def where: WhereExpression[C] = WhereExpression(allExpression(), Some(this))
     def where(c1: this.type => Expression[C]): WhereExpression[C] = WhereExpression(c1(this), Some(this))
     def find(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
@@ -78,6 +79,8 @@ trait Lexis {
 
     def ||(r: Expression[T]) = LogicalExpression(this, r, "$or")
   }
+
+  case class allExpression[C]() extends Expression[C]
 
   /**
    *
@@ -216,7 +219,7 @@ trait Lexis {
     }
 
     def builderWhereExpression(s: WhereExpression[_]):execute = {
-      conditionExecute(s.collection.toString, buildCondition(s.c))
+      conditionExecute(s.collection.get.toString, buildCondition(s.c))
     }
 
     def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
@@ -306,6 +309,7 @@ trait Lexis {
           }
         case l: LogicalExpression[_] =>
           builder.append(l.operator, (buildCondition(l.left)::buildCondition(l.right)::Nil).toArray).get
+        case allExpression() => new BasicDBObject()
       }
     }
 

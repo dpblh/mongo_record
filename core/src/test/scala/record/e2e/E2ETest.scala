@@ -2,6 +2,7 @@ package record.e2e
 
 import org.scalatest.{FreeSpec, Matchers}
 import record.MongoRecordImpl._
+import record.Spec
 import record.imports._
 
 /**
@@ -22,64 +23,85 @@ object Person extends Meta[Person] {
 
 }
 
-class E2ETest extends FreeSpec with Matchers {
+class E2ETest extends Spec {
 
-  Person.where { p =>
-    p.name === "tim" || p.age > 3
-  }.remove
+  Person.where.remove
 
-  Person("tim", 1, Address("Kal", "Tver")).save
-  Person("tim", 2, Address("Kal", "Tver")).save
-  Person("tim", 3, Address("Kal", "Tver")).save
-  Person.insert(Person("tim", 5, Address("Kalinin", "Tver"))).flash
+  Person("tim", 23, Address("Kal", "Tver")).save
+  Person("tim", 24, Address("Kal", "Tver")).save
+  Person("tim", 27, Address("Kal", "Tver")).save
+  Person("klava", 28, Address("Kal", "Tver")).save
+  Person.insert(Person("tim", 25, Address("Kalinin", "Tver"))).flash
 
   Person.find { p =>
     where(p.name === "tim") select p
-  }.fetch.foreach(println)
+  }.fetch.length shouldBe 4
 
   //select field
   Person.find { p =>
     where(p.name === "tim") select p.name
-  }.fetch.foreach(println)
+  }.fetch.length shouldBe 4
 
   //inner type
   Person.find { p =>
     where(p.name === "tim") select p.address
-  }.fetch.foreach(println)
+  }.fetch.length shouldBe 4
 
   //select fields
   Person.find { p =>
     where(p.name === "tim") select(p.name, p.address)
-  }.fetch.foreach(println)
+  }.fetch.length shouldBe 4
 
 
   //Some
-  Person.find { p =>
-    where(p.name === "tim") select p
-  }.fetchOne.foreach(println)
+  yes(Person.find { p =>
+    where(p.name === "klava") select p
+  }.fetchOne, Person("klava", 28, Address("Kal", "Tver")))
 
   //None
-  Person.find { p =>
+  yes(Person.find { p =>
     where(p.name === "tim2" && p.age > 4) select p
-  }.fetchOne.foreach(println)
+  }.fetchOne, None)
 
   Person.find { p =>
     where(p.address === Address("Kalinin", "Tver")) select p
-  }.fetch.foreach(println)
+  }.fetch.length shouldBe 1
+
+  Person.find { p =>
+    where(p.name === "tim" && p.age <= 25) select p
+  }.fetch.length shouldBe 3
 
   //update all
   Person.modify { p =>
-    where(p.name === "tim") set(p.age, 4)
+    where(p.name === "tim") set(p.age, 29)
   }.modify()
+
+  Person.find { p =>
+    where(p.name === "tim" && p.age <= 25) select p
+  }.fetch.length shouldBe 0
+
+  yes(Person.find { p =>
+    where(p.name === "klava" && p.age === 28) select p
+  }.fetchOne, Person("klava", 28, Address("Kal", "Tver")))
 
   //update one
   Person.modify { p =>
-    where(p.name === "tim") set(p.age, 5)
+    where(p.name === "klava") set(p.age, 29)
   }.modifyOne()
+
+  yes(Person.find { p =>
+    where(p.name === "klava" && p.age === 28) select p
+  }.fetchOne, None)
 
   Person.where { p =>
     p.name === "tim"
-  }.count
+  }.count shouldBe 4
+
+  Person.where { p =>
+    p.name === "tim"
+  }.remove
+
+  Person.where.count shouldBe 1
 
 
 }
