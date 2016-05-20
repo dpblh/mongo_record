@@ -31,6 +31,7 @@ trait MongoRecord extends Lexis {
    * @return
    */
   def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
+  def where[C]: WhereExpression[C] = WhereExpression(allExpression())
   
 }
 

@@ -1,6 +1,6 @@
 package record
 
-import com.mongodb.DBObject
+import com.mongodb.{BasicDBList, DBObject}
 import scala.reflect.runtime.universe._
 /**
  * Created by tim on 09.05.16.
@@ -14,3 +14,4 @@ case class selectFieldsExecute[T](collection: String, condition: DBObject, selec
 case class insertExecute[T](collection: String, toBeInsert: DBObject) extends execute
 case class conditionExecute[T](collection: String, condition: DBObject) extends execute
 case class updateExecute[T](collection: String, condition: DBObject, update: DBObject) extends execute
+case class joinExecute[T](collection: String, aggregate: List[DBObject], entityType: Type, joins: List[Lexis#Join[_,_,_]]) extends execute
