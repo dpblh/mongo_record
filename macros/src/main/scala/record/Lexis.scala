@@ -96,13 +96,24 @@ trait Lexis {
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
 
-  case class Join[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) {
-    def on[C2](f: WhereExpression[_] => Join[C,C2,F]) = f(w).copy(parent = Some(this))
+  trait Join[C,C1,F] {
+    val owner: Field[C, F]
+    val joined: Field[C1, F]
+    val w: WhereExpression[_]
+    val parent: Option[Join[_,_,_]]
     def flatten:List[Join[_,_,_]] = parent match {
       case Some(x) => this::flatten
       case None => this::Nil
     }
+    def on[C2](f: WhereExpression[_] => Join[C,C2,F]) = f(w) match {
+      case x: JoinOne[_,_,_] => x.copy(parent = Some(this))
+      case x: JoinMany[_,_,_] => x.copy(parent = Some(this))
+    }
   }
+
+
+  case class JoinOne[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
+  case class JoinMany[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
 
   case class InsertResult[C](t: Meta[C], c: Any) extends Query {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
@@ -167,7 +178,11 @@ trait Lexis {
 
     def ===(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$eq")(ev1)
 
-    def ===[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => Join(this, joined, w) }
+    def ===[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinOne(this, joined, w) }
+
+    def hashOne[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinOne(this, joined, w) }
+
+    def hashMany[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinMany(this, joined, w) }
 
     def >(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$gt")(ev1)
 

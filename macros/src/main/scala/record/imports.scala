@@ -29,11 +29,18 @@ object imports {
             val head = DBObjectSerializer.fromDBObjectType(m, entityType)
             val tail = joins.map { join =>
               val joinCollection = m.get(join.joined.collection.toString).asInstanceOf[BasicDBList]
-              joinCollection match {
-                case x if x.nonEmpty =>
-                  val h = DBObjectSerializer.fromDBObjectType(x.head, join.joined.collection.asInstanceOf[Lexis#Meta[_]].typeOf2)
-                  Some(h)
-                case _ => None
+              join match {
+                case y: Lexis#JoinOne[_,_,_] =>
+                  joinCollection match {
+                    case x if x.nonEmpty =>
+                      val h = DBObjectSerializer.fromDBObjectType(x.head, y.joined.collection.asInstanceOf[Lexis#Meta[_]].typeOf2)
+                      Some(h)
+                    case _ => None
+                  }
+                case y: Lexis#JoinMany[_,_,_] =>
+                  joinCollection.toList.map { j =>
+                    DBObjectSerializer.fromDBObjectType(j, y.joined.collection.asInstanceOf[Lexis#Meta[_]].typeOf2)
+                  }
               }
             }
             head::tail
