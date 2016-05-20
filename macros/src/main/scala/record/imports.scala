@@ -1,9 +1,6 @@
 package record
 
-import com.mongodb.{BasicDBList, DBObject, MongoClient}
-import record.joinExecute
-
-import scala.collection.mutable
+import com.mongodb.{DBObject, MongoClient}
 
 /**
  * Created by tim on 09.05.16.
@@ -16,51 +13,24 @@ object imports {
     val db = mongoClient.getDB("test_record")
     def fetch(query: Query):List[_] = {
       query.execute match {
-        case selectExecute(collection, condition, entityType) =>
-          db.getCollection(collection).find(condition).toArray.toList.map(DBObjectSerializer.fromDBObjectType(_, entityType))
-        case selectFieldsExecute(collection, condition, select, fields) =>
-          db.getCollection(collection).find(condition, select).toArray.toList.map { dbobject =>
-            fields.map { field =>
-              DBObjectSerializer.fromDBObjectType(dbobject.get(field.fieldName), field.typeOf2)
-            }
-          }
-        case joinExecute(collection, aggregate, entityType, joins) =>
-          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map { m =>
-            val head = DBObjectSerializer.fromDBObjectType(m, entityType)
-            val tail = joins.map { join =>
-              val joinCollection = m.get(join.joined.collection.toString).asInstanceOf[BasicDBList]
-              join match {
-                case y: Lexis#JoinOne[_,_,_] =>
-                  joinCollection match {
-                    case x if x.nonEmpty =>
-                      val h = DBObjectSerializer.fromDBObjectType(x.head, y.joined.collection.asInstanceOf[Lexis#Meta[_]].typeOf2)
-                      Some(h)
-                    case _ => None
-                  }
-                case y: Lexis#JoinMany[_,_,_] =>
-                  joinCollection.toList.map { j =>
-                    DBObjectSerializer.fromDBObjectType(j, y.joined.collection.asInstanceOf[Lexis#Meta[_]].typeOf2)
-                  }
-              }
-            }
-            head::tail
-          }
+        case selectExecute(collection, condition, transform) =>
+          db.getCollection(collection).find(condition).toArray.toList.map(transform)
+        case selectFieldsExecute(collection, condition, select, transform) =>
+          db.getCollection(collection).find(condition, select).toArray.toList.map(transform)
+        case joinExecute(collection, aggregate, transform) =>
+          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform)
       }
     }
     def fetchOne(query: Query):Option[_] = {
       query.execute match {
-        case selectExecute(collection, condition, entityType) =>
+        case selectExecute(collection, condition, transform) =>
           db.getCollection(collection).findOne(condition) match {
-            case x: DBObject => Some(DBObjectSerializer.fromDBObjectType(x, entityType))
+            case x: DBObject => Some(transform(x))
             case _ => None
           }
-        case selectFieldsExecute(collection, condition, select, fields) =>
+        case selectFieldsExecute(collection, condition, select, transform) =>
           db.getCollection(collection).findOne(condition, select) match {
-            case x: DBObject => Some(
-              fields.map { field =>
-                DBObjectSerializer.fromDBObjectType(x.get(field.fieldName), field.typeOf2)
-              }
-            )
+            case x: DBObject => Some(transform(x))
             case _ => None
           }
       }

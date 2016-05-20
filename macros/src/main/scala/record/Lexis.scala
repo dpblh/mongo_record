@@ -228,6 +228,8 @@ trait Lexis {
     type selectEntity = SelectEntity[_]
     type update = Update[_]
     type join = Join[_,_,_]
+    type joinOne = JoinOne[_,_,_]
+    type joinMany = JoinMany[_,_,_]
 
     def buildInsertResultAsString[C](i: InsertResult[C]) = {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
@@ -243,8 +245,12 @@ trait Lexis {
 
     def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
       s.s match {
-        case e: selectFields => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), e.c.toList)
-        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), s.c.typeOf2)
+        case e: selectFields => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), { obj =>
+          e.c.toList.map { field =>
+            DBObjectSerializer.fromDBObjectType(obj.get(field.fieldName), field.typeOf2)
+          }
+        })
+        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), DBObjectSerializer.fromDBObjectType(_, s.c.typeOf2))
       }
     }
 
@@ -290,12 +296,24 @@ trait Lexis {
     }
 
     def buildJoinResult[T <: M](join: JoinResult[T,_]):execute = {
+
+      import DBObjectSerializer.{fromDBObjectType => fromDBObject}
+
       val condition =  new BasicDBObject("$match", buildCondition(join.joined.w.c))
       val joins = buildJoin(join.joined.flatten)
-      //main join
-//      join.joined.flatten.head.owner.collection.toString
-//      join.joined.flatten.tail
-      joinExecute(join.c.toString, condition::joins, join.c.typeOf2, join.joined.flatten)
+      joinExecute(join.c.toString, condition::joins, { m =>
+        val head = fromDBObject(m, join.c.typeOf2)
+        val tail = join.joined.flatten.map { join =>
+          val joinCollection = m.get(join.joined.collection.toString).asInstanceOf[BasicDBList].toArray.toList
+          join match {
+            case y: joinOne =>
+              joinCollection.headOption.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
+            case y: joinMany =>
+              joinCollection.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
+          }
+        }
+        head::tail
+      })
     }
 
     def buildModify(modify: update):DBObject = {
