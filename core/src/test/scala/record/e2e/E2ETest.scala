@@ -1,7 +1,5 @@
 package record.e2e
 
-import org.scalatest.{FreeSpec, Matchers}
-import record.MongoRecordImpl._
 import record.Spec
 import record.imports._
 

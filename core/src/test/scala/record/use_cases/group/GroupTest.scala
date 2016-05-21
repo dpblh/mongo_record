@@ -11,12 +11,12 @@ case class Token(person_id: String)
 
 object PersonToken extends MongoRecord {
 
-  object Token extends Meta[Token] {
+  object Token extends MetaTag[Token] {
     override val collection_name: String = "token"
     object person_id extends StringField("person_id", this)
   }
 
-  object PersonService extends Meta[Person] {
+  object PersonService extends MetaTag[Person] {
     override val collection_name: String = "person"
     object id extends StringField("id", this)
     object name extends StringField("name", this)

@@ -1,37 +1,22 @@
 package record
 
+import record.signatures._
+
 import scala.reflect.macros.whitebox.Context
 import scala.language.experimental.macros
 
 /**
  * Created by tim on 18.04.16.
  */
-trait MongoRecord extends Lexis {
+trait MongoRecord
+  extends BaseFields
+  with FromSignatures
+  with JoinSignatures
+  with ModifySignatures
+  with WhereSignatures {
 
-  /**
-   * просто карринг. для установки базового типа
-   * @param c
-   * @param c1
-   * @tparam T Collection type
-   * @return
-   */
-  import scala.reflect.runtime.universe._
-  def from[T <: M, C, R](c: T)(c1: T => SelectExpression[R])(implicit ev1: TypeTag[C]): SelectResult[R] = SelectResult[R](c, c1(c), typeOf[C])
+  type Meta[C] = MetaTag[C]
 
-  def join[T <: M, T1 <: M, R](c: T, c1: T1)(f: (T, T1) => JoinQueryYield[R]) = JoinResult(f(c, c1), c)
-  def join[T <: M, T1 <: M, T2 <: M, R](c: T, c1: T1, c2: T2)(f: (T, T1, T2) => JoinQueryYield[R]) = JoinResult(f(c, c1, c2), c)
-
-  def update[T <: M](c: T)(c1: T => UpdateExpression[_]): UpdateResult[T] = UpdateResult(c, c1(c))
-
-  /**
-   * predicate builder
-   * @param c
-   * @tparam C Collection
-   * @return
-   */
-  def where[C](c: Expression[C]): WhereExpression[C] = WhereExpression(c)
-  def where[C]: WhereExpression[C] = WhereExpression(allExpression())
-  
 }
 
 object MongoRecord extends UtilsMacro {

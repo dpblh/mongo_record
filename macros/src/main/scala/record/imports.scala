@@ -5,7 +5,7 @@ import com.mongodb.{DBObject, MongoClient}
 /**
  * Created by tim on 09.05.16.
  */
-object imports {
+object imports extends MongoRecord {
 
   object DBAdapter {
     import scala.collection.JavaConversions._
@@ -37,10 +37,11 @@ object imports {
           db.getCollection(collection).aggregate(aggregate).results().toArray.toList.headOption.map(transform)
       }
     }
-    def update(query: Query[_], multi: Boolean):Unit = {
+    def update(query: Query[_], multi: Boolean):Boolean = {
       query.execute match {
         case updateExecute(collection, condition, update) =>
           db.getCollection(collection).update(condition, update, false, multi)
+          true
       }
     }
     def count(query: Query[_]):Long = {
@@ -55,10 +56,11 @@ object imports {
           db.getCollection(collection).remove(condition)
       }
     }
-    def insert(query: Query[_]):Unit = {
+    def insert(query: Query[_]):Boolean = {
       query.execute match {
         case insertExecute(collection, toBeInsert) =>
           db.getCollection(collection).insert(toBeInsert)
+          true
       }
     }
   }
@@ -71,18 +73,39 @@ object imports {
     def remove(query: Query[_]) = DBAdapter.remove(query)
     def insert(query: Query[_]) = DBAdapter.insert(query)
   }
+
   object ImplDBExecutor extends DBExecutor
 
-  case class MongoRecordReader[R](q: Query[R], db: DBExecutor) {
-    def fetch = db.fetch(q)
-    def fetchOne = db.fetchOne(q)
-    def modify() = db.update(q, multi = true)
-    def modifyOne() = db.update(q)
-    def count = db.count(q)
-    def remove = db.remove(q)
+  case class MongoQueryInsert[R](q: InsertQuery[R], db: DBExecutor) {
     def flash = db.insert(q)
   }
 
-  implicit def query2MongoRecord[R](q: Query[R]):MongoRecordReader[R] = MongoRecordReader(q, ImplDBExecutor)
+  case class MongoQueryJoin[R](q: JoinQuery[R], db: DBExecutor) {
+    def fetch = db.fetch(q)
+    def fetchOne = db.fetchOne(q)
+  }
+
+  case class MongoQueryModify[T <: M](q: ModifyQuery[T], db: DBExecutor) {
+    def modify() = db.update(q, multi = true)
+    def modifyOne() = db.update(q)
+  }
+
+  case class MongoQuerySelect[R](q: SelectQuery[R], db: DBExecutor) {
+    def fetch = db.fetch(q)
+    def fetchOne = db.fetchOne(q)
+  }
+
+  case class MongoQueryWhere[R](q: WhereQuery[R], db: DBExecutor) {
+    def fetch = db.fetch(q)
+    def fetchOne = db.fetchOne(q)
+    def count = db.count(q)
+    def remove = db.remove(q)
+  }
+
+  implicit def insertQuery2MongoRecord[R](q: InsertQuery[R]) = MongoQueryInsert(q, ImplDBExecutor)
+  implicit def joinQuery2MongoRecord[R](q: JoinQuery[R]) = MongoQueryJoin(q, ImplDBExecutor)
+  implicit def selectQuery2MongoRecord[R](q: SelectQuery[R]) = MongoQuerySelect(q, ImplDBExecutor)
+  implicit def modifyQuery2MongoRecord[T <: M](q: ModifyQuery[T]) = MongoQueryModify(q, ImplDBExecutor)
+  implicit def whereQuery2MongoRecord[R](q: WhereQuery[R]) = MongoQueryWhere(q, ImplDBExecutor)
 
 }

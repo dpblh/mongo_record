@@ -12,7 +12,7 @@ case class Address(street: String)
 
 class InnerClassTest extends Spec with MongoRecord {
 
-  object person extends Meta[Person] { self =>
+  object person extends MetaTag[Person] { self =>
     override val collection_name: String = "person"
     object id extends StringField("id", this)
     object email extends StringField("email", this)
