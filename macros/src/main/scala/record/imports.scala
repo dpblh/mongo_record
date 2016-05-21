@@ -18,7 +18,7 @@ object imports {
         case selectFieldsExecute(collection, condition, select, transform) =>
           db.getCollection(collection).find(condition, select).toArray.toList.map(transform)
         case joinExecute(collection, aggregate, transform) =>
-          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform).asInstanceOf[List[R]]
+          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform)
       }
     }
     def fetchOne[R](query: Query[R]):Option[R] = {
@@ -33,6 +33,8 @@ object imports {
             case x: DBObject => Some(transform(x))
             case _ => None
           }
+        case joinExecute(collection, aggregate, transform) =>
+          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.headOption.map(transform)
       }
     }
     def update(query: Query[_], multi: Boolean):Unit = {

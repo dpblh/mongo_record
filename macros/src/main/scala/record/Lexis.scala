@@ -18,6 +18,17 @@ trait Lexis {
   private val mulExpression = classOf[MulExpression[_,_]]
   private val unsetExpression = classOf[UnsetExpression[_,_]]
 
+  type se = SelectEntity[_]
+  type sf1 = SelectFields1[_,_]
+  type sf2 = SelectFields2[_,_, _]
+  type sf3 = SelectFields3[_,_, _, _]
+  type update = Update[_]
+  type join = Join[_,_,_]
+  type joinOne = JoinOne[_,_,_]
+  type joinMany = JoinMany[_,_,_]
+  val se = selectExecute
+  val sf = selectFieldsExecute
+
   trait Make[C]
 
   abstract class Meta[C: TypeTag] extends Make[C] {
@@ -43,11 +54,15 @@ trait Lexis {
     override def execute: execute[R] = MongoBuilder.builderSelectResult(this)
   }
 
-  case class JoinResult[T <: M, T1 <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query[Any] {
-    override def toString: String = MongoBuilder.buildJoinResultAsString(this)
+  case class JoinResult[R](joined: JoinQueryYield[R], collection: M) extends Query[R] {
+    override def toString: String =  MongoBuilder.buildJoinResultAsString(this)
 
-    override def execute: execute[Any] = MongoBuilder.buildJoinResult(this)
+    override def execute: execute[R] = MongoBuilder.buildJoinResult(this)
   }
+
+  trait JoinQueryYield[R] { val condition: Expression[_]; val joinExpression:Seq[join] }
+  case class JoinQueryYield1[C1, C2](condition: Expression[_], j1: Join[C1, C2, _]) extends JoinQueryYield[(C1, C2)] { val joinExpression = Seq(j1) }
+  case class JoinQueryYield2[C1, C2, C3](condition: Expression[_], j1: Join[C1, C2, _], j2: Join[_, C3, _]) extends JoinQueryYield[(C1, C2, C3)] { val joinExpression = Seq(j1, j2) }
 
   trait SelectExpression[R] {
     val w: Expression[_]
@@ -70,12 +85,15 @@ trait Lexis {
     val left = null
     val right = null
     val symbol: String = null
-    //TODO подумать над удалением
+
     def select(c1: M) = SelectEntity[C](c, c1)
     def select[F](c1: Field[C, F]) = SelectFields1(c, c1)
     def select[F1, F2](c1: Field[C, F1], c2: Field[C, F2]) = SelectFields2(c, c1, c2)
     def select[F1, F2, F3](c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3]) = SelectFields3(c, c1, c2, c3)
-    def on[C1, F](f:WhereExpression[_] => Join[C,C1,F]): Join[C, C1, F] = f(this)
+
+    def on[C1, F](f: => Join[C,C1,F]) = JoinQueryYield1(c, f)
+    def on[C1, C2, F](f1: => Join[C,C1,F], f2: => Join[_,C2,F]) = JoinQueryYield2(c, f1, f2)
+
     override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
   }
 
@@ -102,23 +120,13 @@ trait Lexis {
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
 
   trait Join[C,C1,F] {
-    val owner: Field[C, F]
-    val joined: Field[C1, F]
-    val w: WhereExpression[_]
-    val parent: Option[Join[_,_,_]]
-    def flatten:List[Join[_,_,_]] = parent match {
-      case Some(x) => this::flatten
-      case None => this::Nil
-    }
-    def on[C2](f: WhereExpression[_] => Join[C,C2,F]) = f(w) match {
-      case x: JoinOne[_,_,_] => x.copy(parent = Some(this))
-      case x: JoinMany[_,_,_] => x.copy(parent = Some(this))
-    }
+    val owner: Field[_, F]
+    val joined: Field[_, F]
   }
 
 
-  case class JoinOne[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
-  case class JoinMany[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
+  case class JoinOne[C, C1, F](owner: Field[C, F], joined: Field[C1, F]) extends Join[C,Option[C1],F]
+  case class JoinMany[C, C1, F](owner: Field[C, F], joined: Field[C1, F]) extends Join[C,List[C1],F]
 
   case class InsertResult[C](t: Meta[C], c: Any) extends Query[Any] {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
@@ -183,11 +191,11 @@ trait Lexis {
 
     def ===(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$eq")(ev1)
 
-    def ===[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinOne(this, joined, w) }
+    def ===[C1](joined: Field[C1, F]): Join[C,Option[C1],F] = JoinOne(this, joined)
 
-    def hashOne[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinOne(this, joined, w) }
+    def hashOne[C1](joined: Field[C1, F]): Join[C,Option[C1],F] = JoinOne(this, joined)
 
-    def hashMany[C1](joined: Field[C1, F]): WhereExpression[_] => Join[C,C1,F] = { w => JoinMany(this, joined, w) }
+    def hashMany[C1](joined: Field[C1, F]): Join[C,List[C1],F] = JoinMany(this, joined)
 
     def >(right: F)(implicit ev1: TypeTag[F]) = BooleanExpression(this, right, "$gt")(ev1)
 
@@ -228,17 +236,6 @@ trait Lexis {
 
 
   object MongoBuilder {
-
-    type se = SelectEntity[_]
-    type sf1 = SelectFields1[_,_]
-    type sf2 = SelectFields2[_,_, _]
-    type sf3 = SelectFields3[_,_, _, _]
-    type update = Update[_]
-    type join = Join[_,_,_]
-    type joinOne = JoinOne[_,_,_]
-    type joinMany = JoinMany[_,_,_]
-    val se = selectExecute
-    val sf = selectFieldsExecute
 
     def buildInsertResultAsString[C](i: InsertResult[C]) = {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
@@ -286,7 +283,7 @@ trait Lexis {
       "db.%s.update(%s, %s)".format(collection, condition, modify)
     }
 
-    def buildJoin(joins: List[join]):List[DBObject] = {
+    def buildJoin(joins: Seq[join]):Seq[DBObject] = {
       joins.map { join =>
         val builder = BasicDBObjectBuilder.start()
         builder.append("$lookup", BasicDBObjectBuilder.start()
@@ -297,30 +294,36 @@ trait Lexis {
       }
     }
 
-    def buildJoinResultAsString(join: JoinResult[_,_]):String = {
+    def buildJoinResultAsString(join: JoinResult[_]):String = {
       val dblist = new BasicDBList()
-      buildJoin(join.joined.flatten).foreach {dblist.add}
-      "db.%s.aggregate(%s)".format(join.c, dblist.toString)
+      buildJoin(join.joined.joinExpression).foreach {dblist.add}
+      "db.%s.aggregate(%s)".format(join.joined, dblist.toString)
     }
 
-    def buildJoinResult[T <: M](join: JoinResult[T,_]):execute[Any] = {
+    def buildJoinResult[R](join: JoinResult[R]):execute[R] = {
 
-      import DBObjectSerializer.{fromDBObject => fromDBObject}
-
-      val condition =  new BasicDBObject("$match", buildCondition(join.joined.w.c))
-      val joins = buildJoin(join.joined.flatten)
-      joinExecute(join.c.toString, condition::joins, { m =>
-        val head = fromDBObject(m, join.c.typeOf2)
-        val tail = join.joined.flatten.map { join =>
-          val joinCollection = m.get(join.joined.collection.toString).asInstanceOf[BasicDBList].toArray.toList
-          join match {
-            case y: joinOne =>
-              joinCollection.headOption.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
-            case y: joinMany =>
-              joinCollection.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
-          }
+      def relation(j: join, dbo: DBObject) = {
+        val collection = dbo.get(j.joined.collection.toString).asInstanceOf[BasicDBList].toArray.toList
+        j match {
+          case y: joinOne =>
+            collection.headOption.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
+          case y: joinMany =>
+            collection.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].typeOf2))
         }
-        head::tail
+      }
+
+      val condition =  new BasicDBObject("$match", buildCondition(join.joined.condition))
+      val joins = buildJoin(join.joined.joinExpression)//TODO
+
+      joinExecute[R](join.collection.toString, condition::joins.toList, { m =>
+
+        val head = fromDBObject(m, join.collection.typeOf2)
+
+        join.joined match {
+          case JoinQueryYield1(c,j1) => (head, relation(j1, m)).asInstanceOf[R]
+          case JoinQueryYield2(c,j1, j2) => (head, relation(j1, m), relation(j2, m)).asInstanceOf[R]
+        }
+
       })
     }
 

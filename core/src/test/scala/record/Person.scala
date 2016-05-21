@@ -73,7 +73,7 @@ object Person extends MongoRecord {
   }
 
   val joinedThree = join(person, token, friend) { (p, t, f) =>
-    where(p.name === "tim") on(p.id === t.person_id) on (p.id === f.person_id)
+    where(p.name === "tim") on(p.id === t.person_id, p.id === f.person_id)
   }
 
 }
