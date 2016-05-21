@@ -34,13 +34,14 @@ trait Lexis {
   abstract class Meta[C: TypeTag] extends Make[C] {
     val collection_name:String
     override def toString:String = collection_name
-    def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObjectImplicit(c, typeOf2))
+    def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObject(c, typeOf2))
     def isValid(c: C):Boolean = true
     def modify(c1: this.type => Update[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
+
     def where(c1: Expression[C]): WhereExpression[C] = WhereExpression(c1)
-    //TODO подумать на повышение возвращаемого значения. убрать Option[_]
-    def where: WhereExpression[C] = WhereExpression(allExpression(), Some(this))
-    def where(c1: this.type => Expression[C]): WhereExpression[C] = WhereExpression(c1(this), Some(this))
+    def where: WhereResult[C] = WhereResult(WhereExpression(allExpression()), this)
+    def where(c1: this.type => Expression[C]): WhereResult[C] = WhereResult(WhereExpression(c1(this)), this)
+
     def find[R](c1: this.type => SelectExpression[R]): SelectResult[R] = SelectResult[R](this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
@@ -80,7 +81,11 @@ trait Lexis {
     override def execute: execute[Any] = MongoBuilder.builderUpdateResult(this)
   }
 
-  case class WhereExpression[C](c: Expression[C], collection: Option[M] = None) extends Update[C] with Query[Any] {
+  case class WhereResult[C](w: WhereExpression[C], collection: M) extends Query[Any] {
+    override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
+  }
+
+  case class WhereExpression[C](c: Expression[C]) extends Update[C] {
     val parent = null
     val left = null
     val right = null
@@ -94,7 +99,6 @@ trait Lexis {
     def on[C1, F](f: => Join[C,C1,F]) = JoinQueryYield1(c, f)
     def on[C1, C2, F](f1: => Join[C,C1,F], f2: => Join[_,C2,F]) = JoinQueryYield2(c, f1, f2)
 
-    override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
   }
 
   trait Expression[T] {
@@ -114,7 +118,7 @@ trait Lexis {
    * @tparam F field
    */
   case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String)(implicit ev1: TypeTag[F]) extends Expression[C] {
-    def getRight:Any = DBObjectSerializer.asDBObjectImplicit(right, typeOf[F])
+    def typeOf2: Type = typeOf[F]
   }
 
   case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
@@ -138,7 +142,6 @@ trait Lexis {
     val parent:Update[C]
     val left: Field[C, _]
     val right: Any
-    override def toString:String = s"${left.toString} : '${right.toString}'"
     def set[F](left: Field[C, F], right: F):Update[C] = SetExpression(this, left, right)
     def unset(left: Field[C, _]):Update[C] = UnsetExpression(this, left)
     def inc(left: Field[C, Int], right: Int):Update[C] = IncExpression(this, left, right)
@@ -245,8 +248,8 @@ trait Lexis {
       insertExecute(i.t.toString, i.c.asInstanceOf[DBObject])
     }
 
-    def builderWhereExpression(s: WhereExpression[_]):execute[Any] = {
-      conditionExecute(s.collection.get.toString, buildCondition(s.c))
+    def builderWhereExpression(s: WhereResult[_]):execute[Any] = {
+      conditionExecute(s.collection.toString, buildCondition(s.w.c))
     }
 
     def builderSelectResult[R](s: SelectResult[R]):execute[R] = {
@@ -362,9 +365,9 @@ trait Lexis {
       predicate match {
         case b: BooleanExpression[_,_] =>
           b.operator match {
-            case "$eq" => builder.append(b.left.toString, b.getRight).get
+            case "$eq" => builder.append(b.left.toString, DBObjectSerializer.asDBObject(b.right, b.typeOf2)).get
             case _ => builder.append(
-              b.left.toString, new BasicDBObject(b.operator, b.getRight)).get
+              b.left.toString, new BasicDBObject(b.operator, DBObjectSerializer.asDBObject(b.right, b.typeOf2))).get
           }
         case l: LogicalExpression[_] =>
           builder.append(l.operator, (buildCondition(l.left)::buildCondition(l.right)::Nil).toArray).get

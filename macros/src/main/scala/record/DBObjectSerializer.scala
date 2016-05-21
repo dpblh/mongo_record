@@ -50,7 +50,7 @@ object DBObjectSerializer {
     collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
   }
 
-  def asDBObjectImplicit[T](entity: T, tup: Type):Any = {
+  def asDBObject[T](entity: T, tup: Type):Any = {
     val mirror = runtimeMirror(entity.getClass.getClassLoader)
 
     def a2dbObject(x: Any, t: Type): Any = {
@@ -83,7 +83,7 @@ object DBObjectSerializer {
 
   }
 
-  def asDBObject[A: TypeTag](entity: A):Any = asDBObjectImplicit(entity, typeOf[A])
+  def asDBObject[A: TypeTag](entity: A):Any = asDBObject(entity, typeOf[A])
 
   def isDate(`type`: Type):       Boolean = dates.exists(_ =:= `type`)
   def isPrimitive(`type`: Type):  Boolean = primitives.exists(_ =:= `type`)
