@@ -60,6 +60,10 @@ class E2ETest extends Spec {
     where(p.name === "tim") select(p.name, p.address)
   }.fetch.length shouldBe 4
 
+  Person.find { p =>
+    where(p.name === "tim") select(p.name, p.age, p.address)
+  }.fetch.length shouldBe 4
+
 
   //Some
   yes(Person.find { p =>

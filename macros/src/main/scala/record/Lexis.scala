@@ -1,6 +1,7 @@
 package record
 
 import com.mongodb.{BasicDBList, BasicDBObject, DBObject, BasicDBObjectBuilder}
+import DBObjectSerializer._
 import scala.reflect.runtime.universe._
 
 /**
@@ -54,8 +55,9 @@ trait Lexis {
 
   case class SelectEntity[C](w: Expression[_], c: M) extends SelectExpression[C]
 
-  case class SelectFields[C, F](w: Expression[_], c: Field[C, F]) extends SelectExpression[F]
-  case class SelectFields2[C, F1, F2](w: Expression[_], c: Field[C, F1], c1: Field[C, F2]) extends SelectExpression[(F1, F2)]
+  case class SelectFields1[C, F1](w: Expression[_], c1: Field[C, F1]) extends SelectExpression[F1]
+  case class SelectFields2[C, F1, F2](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2]) extends SelectExpression[(F1, F2)]
+  case class SelectFields3[C, F1, F2, F3](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3]) extends SelectExpression[(F1, F2, F3)]
 
   case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query[Any] {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
@@ -70,8 +72,9 @@ trait Lexis {
     val symbol: String = null
     //TODO подумать над удалением
     def select(c1: M) = SelectEntity[C](c, c1)
-    def select[F](c1: Field[C, F]) = SelectFields(c, c1)
+    def select[F](c1: Field[C, F]) = SelectFields1(c, c1)
     def select[F1, F2](c1: Field[C, F1], c2: Field[C, F2]) = SelectFields2(c, c1, c2)
+    def select[F1, F2, F3](c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3]) = SelectFields3(c, c1, c2, c3)
     def on[C1, F](f:WhereExpression[_] => Join[C,C1,F]): Join[C, C1, F] = f(this)
     override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
   }
@@ -226,13 +229,16 @@ trait Lexis {
 
   object MongoBuilder {
 
-    type selectFields = SelectFields[_,_]
-    type selectFields2 = SelectFields2[_,_, _]
-    type selectEntity = SelectEntity[_]
+    type se = SelectEntity[_]
+    type sf1 = SelectFields1[_,_]
+    type sf2 = SelectFields2[_,_, _]
+    type sf3 = SelectFields3[_,_, _, _]
     type update = Update[_]
     type join = Join[_,_,_]
     type joinOne = JoinOne[_,_,_]
     type joinMany = JoinMany[_,_,_]
+    val se = selectExecute
+    val sf = selectFieldsExecute
 
     def buildInsertResultAsString[C](i: InsertResult[C]) = {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
@@ -247,17 +253,14 @@ trait Lexis {
     }
 
     def builderSelectResult[R](s: SelectResult[R]):execute[R] = {
+
+      def as(a:DBObject, e: Field[_,_]) = fromDBObject(a.get(e.fieldName), e.typeOf2)
+
       s.s match {
-        case e: selectFields => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), { obj =>
-            DBObjectSerializer.fromDBObjectType(obj.get(e.c.fieldName), e.c.typeOf2).asInstanceOf[R]
-        })
-        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), { obj =>
-          DBObjectSerializer.fromDBObjectType(obj, s.c.typeOf2).asInstanceOf[R]
-        })
-        case e: selectFields2 => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), { obj =>
-          (DBObjectSerializer.fromDBObjectType(obj.get(e.c.fieldName), e.c.typeOf2),
-          DBObjectSerializer.fromDBObjectType(obj.get(e.c1.fieldName), e.c1.typeOf2)).asInstanceOf[R]
-        })
+        case e: se => se(s.c.toString, buildCondition(s.s.w), asObject[R](_, s.c.typeOf2))
+        case e: sf1 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => fromDBObject(a.get(e.c1.fieldName), e.c1.typeOf2).asInstanceOf[R])
+        case e: sf2 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2)).asInstanceOf[R])
+        case e: sf3 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3)).asInstanceOf[R])
       }
     }
 
@@ -302,7 +305,7 @@ trait Lexis {
 
     def buildJoinResult[T <: M](join: JoinResult[T,_]):execute[Any] = {
 
-      import DBObjectSerializer.{fromDBObjectType => fromDBObject}
+      import DBObjectSerializer.{fromDBObject => fromDBObject}
 
       val condition =  new BasicDBObject("$match", buildCondition(join.joined.w.c))
       val joins = buildJoin(join.joined.flatten)
@@ -346,7 +349,7 @@ trait Lexis {
     def buildSelectFields[R](select: SelectExpression[R]) = {
       val builder = BasicDBObjectBuilder.start()
       select match {
-        case e: selectFields => builder.append(e.c.toString, 1)
+        case e: sf1 => builder.append(e.c1.toString, 1)
         case _ =>
       }
       builder.get()

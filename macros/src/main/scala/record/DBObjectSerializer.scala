@@ -12,9 +12,11 @@ object DBObjectSerializer {
 
   case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
 
-  def fromDBObject[T: TypeTag](m: DBObject):Any = fromDBObjectType(m, typeOf[T])
+  def fromDBObject[T: TypeTag](m: DBObject):Any = fromDBObject(m, typeOf[T])
 
-  def fromDBObjectType(value: Any, tpe: Type):Any = {
+  def asObject[R](value: Any, tpe: Type):R = fromDBObject(value, tpe).asInstanceOf[R]
+
+  def fromDBObject(value: Any, tpe: Type):Any = {
     tpe match {
       case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
       case x if isDate(x) => any2date(x, value)
@@ -30,7 +32,7 @@ object DBObjectSerializer {
             val constructorArgs = constructor.paramLists.flatten.map { param =>
               val name = param.name.toString
               val value = y.get(name)
-              fromDBObjectType(value, param.typeSignature)
+              fromDBObject(value, param.typeSignature)
             }
             constructorMirror(constructorArgs: _*)
           case _ => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: value $value")
@@ -45,7 +47,7 @@ object DBObjectSerializer {
       case x if tup <:< typeOf[Set[_]]=> o.toSet
       case x if tup <:< typeOf[Seq[_]]=> o.toList
     }
-    collection.map( o => fromDBObjectType(o.asInstanceOf[DBObject], tup.typeArgs.head))
+    collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
   }
 
   def asDBObjectImplicit[T](entity: T, tup: Type):Any = {
