@@ -89,7 +89,6 @@ trait Lexis {
     val parent = null
     val left = null
     val right = null
-    val symbol: String = null
 
     def select(c1: M) = SelectEntity[C](c, c1)
     def select[F](c1: Field[C, F]) = SelectFields1(c, c1)
