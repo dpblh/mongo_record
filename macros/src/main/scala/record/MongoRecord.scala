@@ -16,7 +16,7 @@ trait MongoRecord extends Lexis {
    * @return
    */
   import scala.reflect.runtime.universe._
-  def from[T <: M, C](c: T)(c1: T => SelectExpression)(implicit ev1: TypeTag[C]): SelectResult[T] = SelectResult[T](c, c1(c), typeOf[C])
+  def from[T <: M, C, R](c: T)(c1: T => SelectExpression[R])(implicit ev1: TypeTag[C]): SelectResult[R] = SelectResult[R](c, c1(c), typeOf[C])
 
   def join[T <: M, T1 <: M](c: T, c1: T1)(f: (T, T1) => Join[_, _, _]): JoinResult[T, T1] = JoinResult[T, T1](c, c1, f(c, c1))
 

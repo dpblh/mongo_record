@@ -7,7 +7,7 @@ import org.scalatest.{Matchers, FreeSpec}
  */
 trait Spec extends FreeSpec with Matchers {
 
-  implicit def query2string(q: Query):String = q.toString
+  implicit def query2string(q: Query[_]):String = q.toString
 
   def yes(left: String, right: String):Unit = left.replaceAll("\\s", "") shouldBe right.replaceAll("\\s", "")
 

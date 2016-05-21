@@ -29,49 +29,51 @@ trait Lexis {
     //TODO подумать на повышение возвращаемого значения. убрать Option[_]
     def where: WhereExpression[C] = WhereExpression(allExpression(), Some(this))
     def where(c1: this.type => Expression[C]): WhereExpression[C] = WhereExpression(c1(this), Some(this))
-    def find(c1: this.type => SelectExpression): SelectResult[this.type] = SelectResult(this, c1(this), typeOf2)
+    def find[R](c1: this.type => SelectExpression[R]): SelectResult[R] = SelectResult[R](this, c1(this), typeOf2)
     def copy(collection_name: String = this.collection_name):Meta[C] =  new Meta[C] {
       override val collection_name: String = collection_name
     }
     def typeOf2: Type = typeOf[C]
   }
 
-  case class SelectResult[T <: M](c: T, s: SelectExpression, tag: Type) extends Query {
+  case class SelectResult[R](c: M, s: SelectExpression[R], tag: Type) extends Query[R] {
     override def toString: String = MongoBuilder.buildSelectResultAsString(this)
 
-    override def execute: execute = MongoBuilder.builderSelectResult(this)
+    override def execute: execute[R] = MongoBuilder.builderSelectResult(this)
   }
 
-  case class JoinResult[T <: M, T1 <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query {
+  case class JoinResult[T <: M, T1 <: M](c: T, c1: T1, joined: Join[_, _, _]) extends Query[Any] {
     override def toString: String = MongoBuilder.buildJoinResultAsString(this)
 
-    override def execute: execute = MongoBuilder.buildJoinResult(this)
+    override def execute: execute[Any] = MongoBuilder.buildJoinResult(this)
   }
 
-  trait SelectExpression {
+  trait SelectExpression[R] {
     val w: Expression[_]
   }
 
-  case class SelectEntity[T <: M](w: Expression[_], c: T) extends SelectExpression
+  case class SelectEntity[C](w: Expression[_], c: M) extends SelectExpression[C]
 
-  case class SelectFields[C](w: Expression[_], c: Seq[Field[C, _]]) extends SelectExpression
+  case class SelectFields[C, F](w: Expression[_], c: Field[C, F]) extends SelectExpression[F]
+  case class SelectFields2[C, F1, F2](w: Expression[_], c: Field[C, F1], c1: Field[C, F2]) extends SelectExpression[(F1, F2)]
 
-  case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query {
+  case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query[Any] {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
 
-    override def execute: execute = MongoBuilder.builderUpdateResult(this)
+    override def execute: execute[Any] = MongoBuilder.builderUpdateResult(this)
   }
 
-  case class WhereExpression[C](c: Expression[C], collection: Option[M] = None) extends Update[C] with Query {
+  case class WhereExpression[C](c: Expression[C], collection: Option[M] = None) extends Update[C] with Query[Any] {
     val parent = null
     val left = null
     val right = null
     val symbol: String = null
     //TODO подумать над удалением
-    def select[S <: Meta[C]](c1: S) = SelectEntity(c, c1)
-    def select(c1: Field[C, _]*) = SelectFields(c, c1)
+    def select(c1: M) = SelectEntity[C](c, c1)
+    def select[F](c1: Field[C, F]) = SelectFields(c, c1)
+    def select[F1, F2](c1: Field[C, F1], c2: Field[C, F2]) = SelectFields2(c, c1, c2)
     def on[C1, F](f:WhereExpression[_] => Join[C,C1,F]): Join[C, C1, F] = f(this)
-    override def execute: execute = MongoBuilder.builderWhereExpression(this)
+    override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
   }
 
   trait Expression[T] {
@@ -115,10 +117,10 @@ trait Lexis {
   case class JoinOne[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
   case class JoinMany[C, C1, F](owner: Field[C, F], joined: Field[C1, F], w: WhereExpression[_], parent: Option[Join[_,_,_]] = None) extends Join[C,C1,F]
 
-  case class InsertResult[C](t: Meta[C], c: Any) extends Query {
+  case class InsertResult[C](t: Meta[C], c: Any) extends Query[Any] {
     override def toString: String = MongoBuilder.buildInsertResultAsString(this)
 
-    override def execute: execute = MongoBuilder.builderInsertResult(this)
+    override def execute: execute[Any] = MongoBuilder.builderInsertResult(this)
   }
 
   trait Update[C] {
@@ -224,7 +226,8 @@ trait Lexis {
 
   object MongoBuilder {
 
-    type selectFields = SelectFields[_]
+    type selectFields = SelectFields[_,_]
+    type selectFields2 = SelectFields2[_,_, _]
     type selectEntity = SelectEntity[_]
     type update = Update[_]
     type join = Join[_,_,_]
@@ -235,26 +238,30 @@ trait Lexis {
       "db.%s.insert(%s)".format(i.t, i.c.toString)
     }
 
-    def builderInsertResult[F](i: InsertResult[_]):execute = {
+    def builderInsertResult[F](i: InsertResult[_]):execute[Any] = {
       insertExecute(i.t.toString, i.c.asInstanceOf[DBObject])
     }
 
-    def builderWhereExpression(s: WhereExpression[_]):execute = {
+    def builderWhereExpression(s: WhereExpression[_]):execute[Any] = {
       conditionExecute(s.collection.get.toString, buildCondition(s.c))
     }
 
-    def builderSelectResult[T <: M](s: SelectResult[T]):execute = {
+    def builderSelectResult[R](s: SelectResult[R]):execute[R] = {
       s.s match {
         case e: selectFields => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), { obj =>
-          e.c.toList.map { field =>
-            DBObjectSerializer.fromDBObjectType(obj.get(field.fieldName), field.typeOf2)
-          }
+            DBObjectSerializer.fromDBObjectType(obj.get(e.c.fieldName), e.c.typeOf2).asInstanceOf[R]
         })
-        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), DBObjectSerializer.fromDBObjectType(_, s.c.typeOf2))
+        case e: selectEntity => selectExecute(s.c.toString, buildCondition(s.s.w), { obj =>
+          DBObjectSerializer.fromDBObjectType(obj, s.c.typeOf2).asInstanceOf[R]
+        })
+        case e: selectFields2 => selectFieldsExecute(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), { obj =>
+          (DBObjectSerializer.fromDBObjectType(obj.get(e.c.fieldName), e.c.typeOf2),
+          DBObjectSerializer.fromDBObjectType(obj.get(e.c1.fieldName), e.c1.typeOf2)).asInstanceOf[R]
+        })
       }
     }
 
-    def builderUpdateResult[F](s: UpdateResult[_]):execute = {
+    def builderUpdateResult[F](s: UpdateResult[_]):execute[Any] = {
       updateExecute(s.c.toString, buildCondition(s.s.condition.c), buildModify(s.s))
     }
 
@@ -277,9 +284,6 @@ trait Lexis {
     }
 
     def buildJoin(joins: List[join]):List[DBObject] = {
-//      val dbList = new BasicDBList()
-//      (joins.head.owner, joins.head.owner.collection.toString)
-//      joins.tail.ma
       joins.map { join =>
         val builder = BasicDBObjectBuilder.start()
         builder.append("$lookup", BasicDBObjectBuilder.start()
@@ -288,14 +292,15 @@ trait Lexis {
           .append("foreignField", join.joined.toString)
           .append("as", join.joined.collection.toString).get()).get()
       }
-//      dbList
     }
 
     def buildJoinResultAsString(join: JoinResult[_,_]):String = {
-      "db.%s.aggregate(%s)".format(join.c, buildJoin(join.joined.flatten).toString)
+      val dblist = new BasicDBList()
+      buildJoin(join.joined.flatten).foreach {dblist.add}
+      "db.%s.aggregate(%s)".format(join.c, dblist.toString)
     }
 
-    def buildJoinResult[T <: M](join: JoinResult[T,_]):execute = {
+    def buildJoinResult[T <: M](join: JoinResult[T,_]):execute[Any] = {
 
       import DBObjectSerializer.{fromDBObjectType => fromDBObject}
 
@@ -338,10 +343,10 @@ trait Lexis {
       builder.get()
     }
 
-    def buildSelectFields(select: SelectExpression) = {
+    def buildSelectFields[R](select: SelectExpression[R]) = {
       val builder = BasicDBObjectBuilder.start()
       select match {
-        case e: selectFields => e.c.foreach { a => builder.append(a.toString, 1) }
+        case e: selectFields => builder.append(e.c.toString, 1)
         case _ =>
       }
       builder.get()

@@ -11,17 +11,17 @@ object imports {
     import scala.collection.JavaConversions._
     val mongoClient = new MongoClient()
     val db = mongoClient.getDB("test_record")
-    def fetch(query: Query):List[_] = {
+    def fetch[R](query: Query[R]):List[R] = {
       query.execute match {
         case selectExecute(collection, condition, transform) =>
           db.getCollection(collection).find(condition).toArray.toList.map(transform)
         case selectFieldsExecute(collection, condition, select, transform) =>
           db.getCollection(collection).find(condition, select).toArray.toList.map(transform)
         case joinExecute(collection, aggregate, transform) =>
-          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform)
+          db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform).asInstanceOf[List[R]]
       }
     }
-    def fetchOne(query: Query):Option[_] = {
+    def fetchOne[R](query: Query[R]):Option[R] = {
       query.execute match {
         case selectExecute(collection, condition, transform) =>
           db.getCollection(collection).findOne(condition) match {
@@ -35,25 +35,25 @@ object imports {
           }
       }
     }
-    def update(query: Query, multi: Boolean):Unit = {
+    def update(query: Query[_], multi: Boolean):Unit = {
       query.execute match {
         case updateExecute(collection, condition, update) =>
           db.getCollection(collection).update(condition, update, false, multi)
       }
     }
-    def count(query: Query):Long = {
+    def count(query: Query[_]):Long = {
       query.execute match {
         case conditionExecute(collection, condition) =>
           db.getCollection(collection).count(condition)
       }
     }
-    def remove(query: Query):Unit = {
+    def remove(query: Query[_]):Unit = {
       query.execute match {
         case conditionExecute(collection, condition) =>
           db.getCollection(collection).remove(condition)
       }
     }
-    def insert(query: Query):Unit = {
+    def insert(query: Query[_]):Unit = {
       query.execute match {
         case insertExecute(collection, toBeInsert) =>
           db.getCollection(collection).insert(toBeInsert)
@@ -62,16 +62,16 @@ object imports {
   }
 
   class DBExecutor {
-    def fetch(query: Query) = DBAdapter.fetch(query)
-    def fetchOne(query: Query) = DBAdapter.fetchOne(query)
-    def update(query: Query, multi: Boolean = false) = DBAdapter.update(query, multi)
-    def count(query: Query) = DBAdapter.count(query)
-    def remove(query: Query) = DBAdapter.remove(query)
-    def insert(query: Query) = DBAdapter.insert(query)
+    def fetch[R](query: Query[R]) = DBAdapter.fetch(query)
+    def fetchOne[R](query: Query[R]) = DBAdapter.fetchOne(query)
+    def update(query: Query[_], multi: Boolean = false) = DBAdapter.update(query, multi)
+    def count(query: Query[_]) = DBAdapter.count(query)
+    def remove(query: Query[_]) = DBAdapter.remove(query)
+    def insert(query: Query[_]) = DBAdapter.insert(query)
   }
   object ImplDBExecutor extends DBExecutor
 
-  case class MongoRecordReader(q: Query, db: DBExecutor) {
+  case class MongoRecordReader[R](q: Query[R], db: DBExecutor) {
     def fetch = db.fetch(q)
     def fetchOne = db.fetchOne(q)
     def modify() = db.update(q, multi = true)
@@ -81,6 +81,6 @@ object imports {
     def flash = db.insert(q)
   }
 
-  implicit def query2MongoRecord(q: Query):MongoRecordReader = MongoRecordReader(q, ImplDBExecutor)
+  implicit def query2MongoRecord[R](q: Query[R]):MongoRecordReader[R] = MongoRecordReader(q, ImplDBExecutor)
 
 }

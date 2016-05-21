@@ -37,6 +37,14 @@ class E2ETest extends Spec {
     where(p.name === "tim") select p
   }.fetch.length shouldBe 4
 
+  Person.find { p =>
+    where(p.name === "tim") select p
+  }.fetch.foreach { _.name }
+
+  Person.find { p =>
+    where(p.name === "tim") select(p.name, p.address)
+  }.fetch.foreach { _._2 }
+
   //select field
   Person.find { p =>
     where(p.name === "tim") select p.name

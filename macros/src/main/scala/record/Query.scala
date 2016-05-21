@@ -4,13 +4,13 @@ import com.mongodb.DBObject
 /**
  * Created by tim on 09.05.16.
  */
-trait Query {
-  def execute:execute
+trait Query[R] {
+  def execute:execute[R]
 }
-sealed class execute
-case class selectExecute(collection: String, condition: DBObject, transform: DBObject => Any) extends execute
-case class selectFieldsExecute(collection: String, condition: DBObject, select: DBObject, transform: DBObject => Any) extends execute
-case class insertExecute(collection: String, toBeInsert: DBObject) extends execute
-case class conditionExecute(collection: String, condition: DBObject) extends execute
-case class updateExecute(collection: String, condition: DBObject, update: DBObject) extends execute
-case class joinExecute(collection: String, aggregate: List[DBObject], transform: DBObject => Any) extends execute
+sealed class execute[R]
+case class selectExecute[R](collection: String, condition: DBObject, transform: DBObject => R) extends execute[R]
+case class selectFieldsExecute[R](collection: String, condition: DBObject, select: DBObject, transform: DBObject => R) extends execute[R]
+case class insertExecute(collection: String, toBeInsert: DBObject) extends execute[Any]
+case class conditionExecute(collection: String, condition: DBObject) extends execute[Any]
+case class updateExecute(collection: String, condition: DBObject, update: DBObject) extends execute[Any]
+case class joinExecute(collection: String, aggregate: List[DBObject], transform: DBObject => Any) extends execute[Any]
