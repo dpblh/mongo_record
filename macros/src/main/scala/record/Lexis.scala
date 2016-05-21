@@ -22,7 +22,7 @@ trait Lexis {
   type sf1 = SelectFields1[_,_]
   type sf2 = SelectFields2[_,_, _]
   type sf3 = SelectFields3[_,_, _, _]
-  type update = Update[_]
+  type update = UpdateExpression[_]
   type join = Join[_,_,_]
   type joinOne = JoinOne[_,_,_]
   type joinMany = JoinMany[_,_,_]
@@ -36,7 +36,7 @@ trait Lexis {
     override def toString:String = collection_name
     def insert(c: C):InsertResult[C] = InsertResult(this, DBObjectSerializer.asDBObject(c, typeOf2))
     def isValid(c: C):Boolean = true
-    def modify(c1: this.type => Update[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
+    def modify(c1: this.type => UpdateExpression[_]): UpdateResult[this.type] = UpdateResult(this, c1(this))
 
     def where(c1: Expression[C]): WhereExpression[C] = WhereExpression(c1)
     def where: WhereResult[C] = WhereResult(WhereExpression(allExpression()), this)
@@ -75,7 +75,7 @@ trait Lexis {
   case class SelectFields2[C, F1, F2](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2]) extends SelectExpression[(F1, F2)]
   case class SelectFields3[C, F1, F2, F3](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3]) extends SelectExpression[(F1, F2, F3)]
 
-  case class UpdateResult[T <: M](c: T, s: Update[_]) extends Query[Any] {
+  case class UpdateResult[T <: M](c: T, s: UpdateExpression[_]) extends Query[Any] {
     override def toString: String = MongoBuilder.buildUpdateResultAsString(this)
 
     override def execute: execute[Any] = MongoBuilder.builderUpdateResult(this)
@@ -85,10 +85,7 @@ trait Lexis {
     override def execute: execute[Any] = MongoBuilder.builderWhereExpression(this)
   }
 
-  case class WhereExpression[C](c: Expression[C]) extends Update[C] {
-    val parent = null
-    val left = null
-    val right = null
+  case class WhereExpression[C](c: Expression[C]) extends UpdateExpression[C] {
 
     def select(c1: M) = SelectEntity[C](c, c1)
     def select[F](c1: Field[C, F]) = SelectFields1(c, c1)
@@ -137,48 +134,39 @@ trait Lexis {
     override def execute: execute[Any] = MongoBuilder.builderInsertResult(this)
   }
 
-  trait Update[C] {
-    val parent:Update[C]
-    val left: Field[C, _]
-    val right: Any
-    def set[F](left: Field[C, F], right: F):Update[C] = SetExpression(this, left, right)
-    def unset(left: Field[C, _]):Update[C] = UnsetExpression(this, left)
-    def inc(left: Field[C, Int], right: Int):Update[C] = IncExpression(this, left, right)
-    def mul(left: Field[C, Int], right: Int):Update[C] = MulExpression(this, left, right)
-    def rename[F](left: Field[C, F], right: String):Update[C] = RenameExpression(this, left, right)
-    def min(left: Field[C, Int], right: Int):Update[C] = MinExpression(this, left, right)
-    def max(left: Field[C, Int], right: Int):Update[C] = MaxExpression(this, left, right)
-    //TODO hide private[_]
-    def flatten:Map[Class[_ <: Update[_]], List[Update[C]]] = {
+  trait UpdateExpression[C] {
+    def set[F](left: Field[C, F], right: F) = SetExpression(this::updates, left, right)
+    def unset(left: Field[C, _]) = UnsetExpression(this::updates, left)
+    def inc(left: Field[C, Int], right: Int) = IncExpression(this::updates, left, right)
+    def mul(left: Field[C, Int], right: Int) = MulExpression(this::updates, left, right)
+    def rename[F](left: Field[C, F], right: String) = RenameExpression(this::updates, left, right)
+    def min(left: Field[C, Int], right: Int) = MinExpression(this::updates, left, right)
+    def max(left: Field[C, Int], right: Int) = MaxExpression(this::updates, left, right)
 
-      val parents = scala.collection.mutable.ArrayBuffer[Update[C]](this)
-      var p = this
+    //TODO
+    private [record] val updates:List[UpdateExpression[C]] = Nil
+    private [record] val left: Field[C, _] = null
+    private [record] val right: Any = null
 
-      while (p.parent != null) {
-        parents += p.parent
-        p = p.parent
-      }
-      parents.toList.groupBy(_.getClass).toArray.sortBy(_._1.getClass.getName).toMap
-    }
-    def condition = flatten(classOf[WhereExpression[C]]).head.asInstanceOf[WhereExpression[C]]
-    def modify = flatten.filter( _._1 != classOf[WhereExpression[_]])
+    private [record] def condition = (this::updates).reverse.head.asInstanceOf[WhereExpression[C]]
+    private [record] def modify = (this::updates).reverse.tail.groupBy(_.getClass)
   }
 
-  case class SetExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+  case class SetExpression[C, F](override val updates: List[UpdateExpression[C]], override val left: Field[C, F], override val right: F) extends UpdateExpression[C]
 
-  case class IncExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+  case class IncExpression[C, F](override val updates: List[UpdateExpression[C]], override val left: Field[C, F], override val right: F) extends UpdateExpression[C]
 
-  case class MulExpression[C, F](parent: Update[C], left: Field[C, F], right: F) extends Update[C]
+  case class MulExpression[C, F](override val updates: List[UpdateExpression[C]], override val left: Field[C, F], override val right: F) extends UpdateExpression[C]
 
-  case class RenameExpression[C, F](parent: Update[C], left: Field[C, F], right: String) extends Update[C]
+  case class RenameExpression[C, F](override val updates: List[UpdateExpression[C]], override val left: Field[C, F], override val right: String) extends UpdateExpression[C]
 
-  case class UnsetExpression[C, F](parent: Update[C], left: Field[C, F]) extends Update[C] {
+  case class UnsetExpression[C, F](override val updates: List[UpdateExpression[C]], override val left: Field[C, F]) extends UpdateExpression[C] {
     override val right = 1
   }
 
-  case class MinExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C]
+  case class MinExpression[C](override val updates: List[UpdateExpression[C]], override val left: Field[C, Int], override val right: Int) extends UpdateExpression[C]
 
-  case class MaxExpression[C](parent: Update[C], left: Field[C, Int], right: Int) extends Update[C]
+  case class MaxExpression[C](override val updates: List[UpdateExpression[C]], override val left: Field[C, Int], override val right: Int) extends UpdateExpression[C]
 
   /**
    *

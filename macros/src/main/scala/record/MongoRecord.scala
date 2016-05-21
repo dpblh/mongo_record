@@ -21,7 +21,7 @@ trait MongoRecord extends Lexis {
   def join[T <: M, T1 <: M, R](c: T, c1: T1)(f: (T, T1) => JoinQueryYield[R]) = JoinResult(f(c, c1), c)
   def join[T <: M, T1 <: M, T2 <: M, R](c: T, c1: T1, c2: T2)(f: (T, T1, T2) => JoinQueryYield[R]) = JoinResult(f(c, c1, c2), c)
 
-  def update[T <: M](c: T)(c1: T => Update[_]): UpdateResult[T] = UpdateResult(c, c1(c))
+  def update[T <: M](c: T)(c1: T => UpdateExpression[_]): UpdateResult[T] = UpdateResult(c, c1(c))
 
   /**
    * predicate builder
