@@ -1,7 +1,6 @@
 package record.use_cases.inner_class
 
 import record._
-import imports._
 /**
  * Created by tim on 25.04.16.
  */
@@ -14,15 +13,15 @@ class InnerClassTest extends Spec with MongoRecord {
 
   object person extends MetaTag[Person] { self =>
     override val collection_name: String = "person"
-    object id extends StringField("id", this)
-    object email extends StringField("email", this)
+    object id extends StringField(this)
+    object email extends StringField(this)
 
-    object personData extends InnerField[Person, PersonData]("person_data", this) {
-      object firstName extends StringField("firstName", this)
-      object lastName extends StringField("lastName", this)
+    object personData extends InnerField[Person, PersonData](this) {
+      object firstName extends StringField(this)
+      object lastName extends StringField(this)
 
-      object address extends InnerField[Person, Address]("address", this) {
-        object street extends StringField("street", this)
+      object address extends InnerField[Person, Address](this) {
+        object street extends StringField(this)
       }
     }
 

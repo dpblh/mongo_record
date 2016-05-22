@@ -11,9 +11,9 @@ object Person extends Meta[Person] {
 
   override val collection_name: String = "person"
   override def isValid(c: Person): Boolean = c.name.nonEmpty && c.age > 18
-  object id extends StringField("id", this)
-  object name extends StringField("name", this)
-  object age extends IntField("age", this)
+  object id extends StringField(this)
+  object name extends StringField(this)
+  object age extends IntField(this)
 
   def findThis = find { s =>
     where(s.age > 23 && s.age < 12) select s

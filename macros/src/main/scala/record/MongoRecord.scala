@@ -31,14 +31,15 @@ object MongoRecord extends UtilsMacro {
 
     val collection_name = camelToUnderscores(tpe.typeSymbol.name.toString)
 
-    var fields = getFieldNamesAndTypes(c)(tpe).map { p =>
+    val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"val ${TermName(name.encoded)} = UField[$tpe, $typ](${name.encoded}, this)"
+      q"object ${TermName(name.encoded)} extends UField[$tpe, $typ](${name.encoded}, this)"
     }.toList
 
-    fields = q"val collection_name = $collection_name" ::fields
-
-    q"new Meta[$tpe] { ..$fields }"
+    q"""new Meta[$tpe] {
+        val collection_name = $collection_name
+       ..$fields
+       }"""
 
   }
 

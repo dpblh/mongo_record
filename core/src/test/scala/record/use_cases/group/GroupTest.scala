@@ -13,14 +13,14 @@ object PersonToken extends MongoRecord {
 
   object Token extends MetaTag[Token] {
     override val collection_name: String = "token"
-    object person_id extends StringField("person_id", this)
+    object person_id extends StringField(this)
   }
 
   object PersonService extends MetaTag[Person] {
     override val collection_name: String = "person"
-    object id extends StringField("id", this)
-    object name extends StringField("name", this)
-    object age extends IntField("age", this)
+    object id extends StringField(this)
+    object name extends StringField(this)
+    object age extends IntField(this)
   }
 
   val joined = join(PersonService, Token) { (p, t) =>

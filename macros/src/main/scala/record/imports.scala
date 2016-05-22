@@ -107,5 +107,6 @@ object imports extends MongoRecord {
   implicit def selectQuery2MongoRecord[R](q: SelectQuery[R]) = MongoQuerySelect(q, ImplDBExecutor)
   implicit def modifyQuery2MongoRecord[T <: M](q: ModifyQuery[T]) = MongoQueryModify(q, ImplDBExecutor)
   implicit def whereQuery2MongoRecord[R](q: WhereQuery[R]) = MongoQueryWhere(q, ImplDBExecutor)
+  implicit def singleRecord2Meta[T](s: SingleRecord { def mt:T }) = s.mt
 
 }

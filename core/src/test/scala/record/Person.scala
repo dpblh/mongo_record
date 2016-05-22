@@ -17,19 +17,19 @@ object Person extends MongoRecord {
 
   object token extends MetaTag[Token] {
     override val collection_name: String = "token"
-    object person_id extends StringField("person_id", this)
+    object person_id extends StringField(this)
   }
 
   object person extends MetaTag[Person] {
     override val collection_name: String = "person"
-    object id extends StringField("id", this)
-    object name extends StringField("name", this)
-    object age extends IntField("age", this)
+    object id extends StringField(this)
+    object name extends StringField(this)
+    object age extends IntField(this)
   }
 
   object friend extends MetaTag[PersonFriend] {
     override val collection_name: String = "person_friend"
-    object person_id extends StringField("person_id", this)
+    object person_id extends StringField(this)
   }
 
   val findAnd = from(person) { s =>

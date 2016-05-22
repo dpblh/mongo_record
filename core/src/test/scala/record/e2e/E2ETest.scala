@@ -2,7 +2,7 @@ package record.e2e
 
 import record.Spec
 import record.imports._
-
+import record.MongoRecord._
 /**
  * Created by tim on 09.05.16.
  */
@@ -15,12 +15,15 @@ case class Person(name: String, age: Int, address: Address) {
 object Person extends Meta[Person] {
 
   override val collection_name: String = "person"
-//  TODO fieldName можно определить из навания обьекта
-  object name extends StringField("name", this)
-  object age extends IntField("age", this)
-  object address extends InnerField[Person, Address]("address", this)
+  object name extends StringField(this)
+  object age extends IntField(this)
+  object address extends InnerField[Person, Address](this)
 
 }
+
+//object Person extends SingleRecord {
+//  def mt = meta[Person]
+//}
 
 class E2ETest extends Spec {
 

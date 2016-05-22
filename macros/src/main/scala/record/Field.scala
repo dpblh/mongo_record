@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe._
  */
 trait Field[C, F] extends Make[C] {
 
-  val fieldName: String
+  val fieldName: String = getClass.getSimpleName.replace("$", "")
   val collection: Make[C]
 
   def ===[C1](joined: Field[C1, F])           =   JoinOne(this, joined)
@@ -32,9 +32,9 @@ trait Field[C, F] extends Make[C] {
 }
 
 trait BaseFields {
-  case class UField[C, F](fieldName: String, collection: Make[C]) extends Field[C, F] { override def runtimeClass: Type = ??? }
-  case class StringField[C](fieldName: String, collection: Make[C]) extends Field[C, String] {  override def runtimeClass: Type = typeOf[String]  }
-  case class IntField[C](fieldName: String, collection: Make[C]) extends Field[C, Int] {  override def runtimeClass: Type = typeOf[Int] }
-  case class LongField[C](fieldName: String, collection: Make[C]) extends Field[C, Long] {  override def runtimeClass: Type = typeOf[Long]  }
-  case class InnerField[C, F](fieldName: String, collection: Make[C])(implicit t: TypeTag[F]) extends Field[C, F] { override def runtimeClass: Type = typeOf[F] }
+  case class UField[C, F](override val fieldName: String, collection: Make[C]) extends Field[C, F] { override def runtimeClass: Type = ??? }
+  case class StringField[C](collection: Make[C]) extends Field[C, String] {  override def runtimeClass: Type = typeOf[String]  }
+  case class IntField[C](collection: Make[C]) extends Field[C, Int] {  override def runtimeClass: Type = typeOf[Int] }
+  case class LongField[C](collection: Make[C]) extends Field[C, Long] {  override def runtimeClass: Type = typeOf[Long]  }
+  case class InnerField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends Field[C, F] { override def runtimeClass: Type = typeOf[F] }
 }
