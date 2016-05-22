@@ -13,7 +13,8 @@ trait MongoRecord
   with FromSignatures
   with JoinSignatures
   with ModifySignatures
-  with WhereSignatures {
+  with WhereSignatures
+  with MacroWrapper {
 
   type Meta[C] = MetaTag[C]
 
