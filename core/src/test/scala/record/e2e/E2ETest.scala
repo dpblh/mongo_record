@@ -15,6 +15,7 @@ case class Person(name: String, age: Int, address: Address) {
 object Person extends Meta[Person] {
 
   override val collection_name: String = "person"
+//  TODO fieldName можно определить из навания обьекта
   object name extends StringField("name", this)
   object age extends IntField("age", this)
   object address extends InnerField[Person, Address]("address", this)

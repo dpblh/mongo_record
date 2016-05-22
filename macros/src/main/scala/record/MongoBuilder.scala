@@ -9,12 +9,12 @@ import record.signatures._
  */
 object MongoBuilder {
 
-  def insertQueryAsString[C](i: InsertQuery[C]) = {
-    "db.%s.insert(%s)".format(i.t, i.c.toString)
-  }
-
   def insertQuery[F](i: InsertQuery[_]):execute[Boolean] = {
     insertExecute(i.t.toString, i.c.asInstanceOf[DBObject])
+  }
+
+  def insertQueryAsString[C](i: InsertQuery[C]) = {
+    "db.%s.insert(%s)".format(i.t, i.c.toString)
   }
 
   def whereQuery(s: WhereQuery[_]):execute[Boolean] = {
@@ -33,10 +33,6 @@ object MongoBuilder {
     }
   }
 
-  def modifyQuery[F](s: ModifyQuery[_]):execute[Boolean] = {
-    updateExecute(s.c.toString, buildCondition(s.s.condition.c), buildModify(s.s))
-  }
-
   def selectQueryAsString(s: SelectQuery[_]) = {
     val fields = buildSelectFields(s.s)
     val condition = buildCondition(s.s.w).toString
@@ -48,28 +44,15 @@ object MongoBuilder {
     }
   }
 
+  def modifyQuery[F](s: ModifyQuery[_]):execute[Boolean] = {
+    updateExecute(s.c.toString, buildCondition(s.s.condition.c), buildModify(s.s))
+  }
+
   def modifyQueryAsString(u: ModifyQuery[_]) = {
     val collection = u.c
     val condition = buildCondition(u.s.condition.c).toString
     val modify = buildModify(u.s)
     "db.%s.update(%s, %s)".format(collection, condition, modify)
-  }
-
-  def buildJoin(joins: Seq[join]):Seq[DBObject] = {
-    joins.map { join =>
-      val builder = BasicDBObjectBuilder.start()
-      builder.append("$lookup", BasicDBObjectBuilder.start()
-        .append("from", join.joined.collection.toString)
-        .append("localField", join.owner.toString)
-        .append("foreignField", join.joined.toString)
-        .append("as", join.joined.collection.toString).get()).get()
-    }
-  }
-
-  def joinQueryAsString(join: JoinQuery[_]):String = {
-    val dblist = new BasicDBList()
-    buildJoin(join.joined.joinExpression).foreach {dblist.add}
-    "db.%s.aggregate(%s)".format(join.joined, dblist.toString)
   }
 
   def joinQuery[R](join: JoinQuery[R]):execute[R] = {
@@ -84,22 +67,39 @@ object MongoBuilder {
       }
     }
 
-    val condition =  new BasicDBObject("$match", buildCondition(join.joined.condition))
-    val joins = buildJoin(join.joined.joinExpression)//TODO
+    val condition = new BasicDBObject("$match", buildCondition(join.joined.condition))
+    val joins = buildJoin(join.joined.joinExpression) //TODO
 
-    joinExecute[R](join.collection.toString, condition::joins.toList, { m =>
+    joinExecute[R](join.collection.toString, condition :: joins.toList, { m =>
 
       val head = fromDBObject(m, join.collection.runtimeClass)
 
       join.joined match {
-        case JoinStateYield1(c,j1) => (head, relation(j1, m)).asInstanceOf[R]
-        case JoinStateYield2(c,j1, j2) => (head, relation(j1, m), relation(j2, m)).asInstanceOf[R]
+        case JoinStateYield1(c, j1) => (head, relation(j1, m)).asInstanceOf[R]
+        case JoinStateYield2(c, j1, j2) => (head, relation(j1, m), relation(j2, m)).asInstanceOf[R]
       }
 
     })
   }
 
-  def buildModify(modify: update):DBObject = {
+  def joinQueryAsString(join: JoinQuery[_]):String = {
+    val dblist = new BasicDBList()
+    buildJoin(join.joined.joinExpression).foreach {dblist.add}
+    "db.%s.aggregate(%s)".format(join.joined, dblist.toString)
+  }
+
+  def buildJoin(joins: Seq[join]):Seq[DBObject] = {
+    joins.map { join =>
+      val builder = BasicDBObjectBuilder.start()
+      builder.append("$lookup", BasicDBObjectBuilder.start()
+        .append("from", join.joined.collection.toString)
+        .append("localField", join.owner.toString)
+        .append("foreignField", join.joined.toString)
+        .append("as", join.joined.collection.toString).get()).get()
+    }
+  }
+
+  private [record] def buildModify(modify: update):DBObject = {
     val builder = BasicDBObjectBuilder.start()
     modify.modify.foreach {
       s => s._1 match {
@@ -115,13 +115,13 @@ object MongoBuilder {
     builder.get()
   }
 
-  def buildListToDBObject(list: List[update]) = {
+  private [record] def buildListToDBObject(list: List[update]) = {
     val builder = BasicDBObjectBuilder.start()
     list.foreach(a => builder.append(a.left.toString, a.right))
     builder.get()
   }
 
-  def buildSelectFields[R](select: SelectState[R]) = {
+  private [record] def buildSelectFields[R](select: SelectState[R]) = {
     val builder = BasicDBObjectBuilder.start()
     select match {
       case e: sf1 => builder.append(e.c1.toString, 1)
@@ -130,7 +130,7 @@ object MongoBuilder {
     builder.get()
   }
 
-  def buildCondition(predicate: Expression[_], builder: BasicDBObjectBuilder = BasicDBObjectBuilder.start()):DBObject = {
+  private [record] def buildCondition(predicate: Expression[_], builder: BasicDBObjectBuilder = BasicDBObjectBuilder.start()):DBObject = {
     predicate match {
       case b: BooleanExpression[_,_] =>
         b.operator match {
