@@ -33,6 +33,22 @@ class E2ETest extends Spec {
   Person.insert(Person("tim", 25, Address("Kalinin", "Tver"))).flash
 
   Person.find { p =>
+    where(p.dynamic("name") === "tim") select p
+  }.fetch.length shouldBe 4
+
+  Person.find { p =>
+    where(p.dynamic("address.city") === "Tver") select p
+  }.fetch.length shouldBe 5
+
+  Person.find { p =>
+    where(p.dynamic("address") === Address("Kalinin", "Tver")) select p
+  }.fetch.length shouldBe 1
+
+  Person.find { p =>
+    where(p.dynamic("address") === Map("region" -> "Kalinin", "city" -> "Tver")) select p
+  }.fetch.length shouldBe 1
+
+  Person.find { p =>
     where(p.name === "tim") select p
   }.fetch.length shouldBe 4
 

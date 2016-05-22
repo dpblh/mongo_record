@@ -11,6 +11,8 @@ package object record {
   private [record] val mulExpression = classOf[MulState[_,_]]
   private [record] val unsetExpression = classOf[UnsetState[_,_]]
 
+  private [record] type booleanExpression = BooleanExpression[_,_, _]
+  private [record] type logicalExpression = LogicalExpression[_]
   private [record] type se = SelectEntity[_]
   private [record] type sf1 = SelectFields1[_,_]
   private [record] type sf2 = SelectFields2[_,_, _]

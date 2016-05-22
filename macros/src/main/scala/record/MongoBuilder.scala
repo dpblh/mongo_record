@@ -132,13 +132,13 @@ object MongoBuilder {
 
   private [record] def buildCondition(predicate: Expression[_], builder: BasicDBObjectBuilder = BasicDBObjectBuilder.start()):DBObject = {
     predicate match {
-      case b: BooleanExpression[_,_] =>
+      case b: booleanExpression =>
         b.operator match {
           case "$eq" => builder.append(b.left.toString, DBObjectSerializer.asDBObject(b.right, b.runtimeClass)).get
           case _ => builder.append(
             b.left.toString, new BasicDBObject(b.operator, DBObjectSerializer.asDBObject(b.right, b.runtimeClass))).get
         }
-      case l: LogicalExpression[_] =>
+      case l: logicalExpression =>
         builder.append(l.operator, (buildCondition(l.left)::buildCondition(l.right)::Nil).toArray).get
       case allExpression() => new BasicDBObject()
     }

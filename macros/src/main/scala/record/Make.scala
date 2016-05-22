@@ -8,7 +8,7 @@ import scala.reflect.runtime.universe._
  */
 trait Make[C]
 
-abstract class MetaTag[C: TypeTag] extends Make[C] {
+abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
 
   type it = this.type
 
@@ -24,6 +24,8 @@ abstract class MetaTag[C: TypeTag] extends Make[C] {
   def where(c1: it => Expression[C]) =    WhereQuery(WhereState(c1(this)), this)
 
   def find[R](c1: it => SelectState[R]) = SelectQuery[R](this, c1(this), runtimeClass)
+
+  def dynamic[F](field: String) =         UField[C, F](field, this)
 
   override def toString = collection_name
 

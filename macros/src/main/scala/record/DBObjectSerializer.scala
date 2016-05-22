@@ -59,7 +59,18 @@ object DBObjectSerializer {
         case acc: MethodSymbol if acc.isCaseAccessor => fieldAsTuple(acc, xm)
       }
 
-      if (members.isEmpty) x else {
+      if (members.isEmpty) {
+        x match {
+          case x1 if isMap(t) =>
+            val builder = BasicDBObjectBuilder.start()
+            x1.asInstanceOf[Map[String,_]].foreach { tupl =>
+              val (key, value) = tupl
+              builder.append(key, a2dbObject(value, tup.typeArgs(1)))
+            }
+            builder.get()
+          case _ => x
+        }
+      } else {
         val builder = BasicDBObjectBuilder.start()
 
         members.foreach { a => builder.append(a._1, a._2) }
@@ -85,6 +96,7 @@ object DBObjectSerializer {
 
   def asDBObject[A: TypeTag](entity: A):Any = asDBObject(entity, typeOf[A])
 
+  def isMap(`type`: Type):        Boolean = `type` <:< typeOf[Map[String,_]]
   def isDate(`type`: Type):       Boolean = dates.exists(_ =:= `type`)
   def isPrimitive(`type`: Type):  Boolean = primitives.exists(_ =:= `type`)
 

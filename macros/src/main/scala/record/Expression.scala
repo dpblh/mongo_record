@@ -12,6 +12,6 @@ trait Expression[T] {
 
 }
 
-case class BooleanExpression[C, F](left: Field[C, F], right: F, operator: String)(implicit ev1: TypeTag[F]) extends Expression[C] { def runtimeClass: Type = typeOf[F]  }
+case class BooleanExpression[C, F, B <: F](left: Field[C, F], right: B, operator: String)(implicit ev1: TypeTag[B]) extends Expression[C] { def runtimeClass: Type = typeOf[B]  }
 case class LogicalExpression[C](left: Expression[C], right: Expression[C], operator: String) extends Expression[C]
 case class allExpression[C]() extends Expression[C]

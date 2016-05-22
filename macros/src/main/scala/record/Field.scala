@@ -14,7 +14,7 @@ trait Field[C, F] extends Make[C] {
   def hashOne[C1](joined: Field[C1, F])       =   JoinOne(this, joined)
   def hashMany[C1](joined: Field[C1, F])      =   JoinMany(this, joined)
 
-  def ===(right: F)(implicit ev1: TypeTag[F]) =   BooleanExpression(this, right, "$eq")(ev1)
+  def ===[B <: F](right: B)(implicit ev1: TypeTag[B]) =   BooleanExpression(this, right, "$eq")(ev1)
   def >(right: F)(implicit ev1: TypeTag[F])   =   BooleanExpression(this, right, "$gt")(ev1)
   def <(right: F)(implicit ev1: TypeTag[F])   =   BooleanExpression(this, right, "$lt")(ev1)
   def >=(right: F)(implicit ev1: TypeTag[F])  =   BooleanExpression(this, right, "$gte")(ev1)
