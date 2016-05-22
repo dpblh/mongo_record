@@ -28,7 +28,7 @@ class MongoRecordTest extends Spec {
       |   "from": "token",
       |   "localField": "id",
       |   "foreignField": "person_id",
-      |   "as": "copies_sold"
+      |   "as": "person_token__person_id"
       | }
       |}])
     """.stripMargin)
@@ -41,7 +41,7 @@ class MongoRecordTest extends Spec {
       |   "from": "person_friend",
       |   "localField": "id",
       |   "foreignField": "person_id",
-      |   "as": "copies_sold"
+      |   "as": "person_person_friend__person_id"
       | }
       |},
       |{
@@ -49,7 +49,7 @@ class MongoRecordTest extends Spec {
       |   "from": "token",
       |   "localField": "id",
       |   "foreignField": "person_id",
-      |   "as": "copies_sold"
+      |   "as": "person_token__person_id"
       | }
       |}])
     """.stripMargin)

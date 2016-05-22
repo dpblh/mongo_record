@@ -26,7 +26,7 @@ trait ModifyState[C] {
   private[record] val left: Field[C, _] = null
   private[record] val right: Any = null
   private[record] def condition = (this :: updates).reverse.head.asInstanceOf[WhereState[C]]
-  private[record] def modify = (this :: updates).reverse.tail.groupBy(_.getClass)
+  private[record] def modify = (this :: updates).reverse.tail.sortBy(_.left.fieldName).groupBy(_.getClass)
 }
 
 case class SetState[C, F](override val updates: List[ModifyState[C]], override val left: Field[C, F], override val right: F) extends ModifyState[C]

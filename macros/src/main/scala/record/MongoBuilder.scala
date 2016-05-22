@@ -37,10 +37,9 @@ object MongoBuilder {
     val fields = buildSelectFields(s.s)
     val condition = buildCondition(s.s.w).toString
     val collection = s.c
-    if (fields.keySet().isEmpty) {
-      "db.%s.find(%s)".format(collection, condition)
-    } else {
-      "db.%s.find(%s, %s)".format(collection, condition, fields)
+    s.s match {
+      case e: se  => "db.%s.find(%s)".format(collection, condition)
+      case _      => "db.%s.find(%s, %s)".format(collection, condition, fields)
     }
   }
 
@@ -58,7 +57,7 @@ object MongoBuilder {
   def joinQuery[R](join: JoinQuery[R]):execute[R] = {
 
     def relation(j: join, dbo: DBObject) = {
-      val collection = dbo.get(j.joined.collection.toString).asInstanceOf[BasicDBList].toArray.toList
+      val collection = dbo.get(s"${j.owner.collection}_${j.joined.collection}__${j.joined.fieldName}").asInstanceOf[BasicDBList].toArray.toList
       j match {
         case y: joinOne =>
           collection.headOption.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].runtimeClass))
@@ -85,17 +84,17 @@ object MongoBuilder {
   def joinQueryAsString(join: JoinQuery[_]):String = {
     val dblist = new BasicDBList()
     buildJoin(join.joined.joinExpression).foreach {dblist.add}
-    "db.%s.aggregate(%s)".format(join.joined, dblist.toString)
+    "db.%s.aggregate(%s)".format(join.collection.toString, dblist.toString)
   }
 
   def buildJoin(joins: Seq[join]):Seq[DBObject] = {
-    joins.map { join =>
+    joins.sortBy(_.owner.toString).reverse.map { join =>
       val builder = BasicDBObjectBuilder.start()
       builder.append("$lookup", BasicDBObjectBuilder.start()
         .append("from", join.joined.collection.toString)
         .append("localField", join.owner.toString)
         .append("foreignField", join.joined.toString)
-        .append("as", join.joined.collection.toString).get()).get()
+        .append("as", s"${join.owner.collection}_${join.joined.collection}__${join.joined.fieldName}").get()).get()
     }
   }
 
@@ -124,7 +123,15 @@ object MongoBuilder {
   private [record] def buildSelectFields[R](select: SelectState[R]) = {
     val builder = BasicDBObjectBuilder.start()
     select match {
-      case e: sf1 => builder.append(e.c1.toString, 1)
+      case e: sf1 =>
+        builder.append(e.c1.toString, 1)
+      case e: sf2 =>
+        builder.append(e.c1.toString, 1)
+        builder.append(e.c2.toString, 1)
+      case e: sf3 =>
+        builder.append(e.c1.toString, 1)
+        builder.append(e.c2.toString, 1)
+        builder.append(e.c3.toString, 1)
       case _ =>
     }
     builder.get()
