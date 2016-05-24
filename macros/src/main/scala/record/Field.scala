@@ -55,7 +55,7 @@ trait BaseFields {
     override def fromDBObject(dbo: Any): Any    = DBObjectSerializer.fromDBObject(dbo, runtimeClass)
     def runtimeClass: Type = typeOf[F]
   }
-  case class RuntimeField[C, F](override val fieldName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends ObjectField[C, F] {
+  case class RuntimeField[C, F](override val fieldName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends Field[C, F] {
     override def asDBObject(c: Any): Any        = DBObjectSerializer.asDBObject(c, runtimeClass)
     override def fromDBObject(dbo: Any): Any    = DBObjectSerializer.fromDBObject(dbo, runtimeClass)
     def runtimeClass: Type = typeOf[F]
