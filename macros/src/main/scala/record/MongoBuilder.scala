@@ -1,7 +1,6 @@
 package record
 
 import com.mongodb.{BasicDBList, BasicDBObject, DBObject, BasicDBObjectBuilder}
-import DBObjectSerializer._
 import record.signatures._
 
 /**
@@ -23,11 +22,11 @@ object MongoBuilder {
 
   def selectQuery[R](s: SelectQuery[R]):execute[R] = {
 
-    def as(a:DBObject, e: Field[_,_]) = fromDBObject(a.get(e.fieldName), e.runtimeClass)
+    def as(a:DBObject, e: Field[_,_]) = e.fromDBObject(a.get(e.fieldName))
 
     s.s match {
-      case e: se => se(s.c.toString, buildCondition(s.s.w), asObject[R](_, s.c.runtimeClass))
-      case e: sf1 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => fromDBObject(a.get(e.c1.fieldName), e.c1.runtimeClass).asInstanceOf[R])
+      case e: se => se(s.c.toString, buildCondition(s.s.w), a => s.c.fromDBObject(a).asInstanceOf[R])
+      case e: sf1 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => as(a, e.c1).asInstanceOf[R])
       case e: sf2 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2)).asInstanceOf[R])
       case e: sf3 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3)).asInstanceOf[R])
     }
@@ -60,9 +59,9 @@ object MongoBuilder {
       val collection = dbo.get(s"${j.owner.collection}_${j.joined.collection}__${j.joined.fieldName}").asInstanceOf[BasicDBList].toArray.toList
       j match {
         case y: joinOne =>
-          collection.headOption.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].runtimeClass))
+          collection.headOption.map(y.joined.collection.fromDBObject(_))
         case y: joinMany =>
-          collection.map(fromDBObject(_, y.joined.collection.asInstanceOf[M].runtimeClass))
+          collection.map(y.joined.collection.fromDBObject(_))
       }
     }
 
@@ -71,7 +70,7 @@ object MongoBuilder {
 
     joinExecute[R](join.collection.toString, condition :: joins.toList, { m =>
 
-      val head = fromDBObject(m, join.collection.runtimeClass)
+      val head = join.collection.fromDBObject(m)
 
       join.joined match {
         case JoinStateYield1(c, j1) => (head, relation(j1, m)).asInstanceOf[R]
@@ -141,9 +140,9 @@ object MongoBuilder {
     predicate match {
       case b: booleanExpression =>
         b.operator match {
-          case "$eq" => builder.append(b.left.toString, DBObjectSerializer.asDBObject(b.right, b.runtimeClass)).get
+          case "$eq" => builder.append(b.left.toString, b.left.asDBObject(b.right)).get
           case _ => builder.append(
-            b.left.toString, new BasicDBObject(b.operator, DBObjectSerializer.asDBObject(b.right, b.runtimeClass))).get
+            b.left.toString, new BasicDBObject(b.operator, b.left.asDBObject(b.right))).get
         }
       case l: logicalExpression =>
         builder.append(l.operator, (buildCondition(l.left)::buildCondition(l.right)::Nil).toArray).get
