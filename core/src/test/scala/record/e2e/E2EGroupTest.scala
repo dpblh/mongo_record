@@ -45,16 +45,12 @@ object Patient extends MongoRecord {
     where(p.id === "tim") on(p.id === pd.person_id)
   }
 
-  def hashOne = join(patient, personalData) { (p, pd) =>
-    where(p.id === "tim") on(p.id hashOne pd.person_id)
-  }
-
   def hashMany = join(patient, personalData) { (p, pd) =>
-    where(p.id === "tim") on(p.id hashMany pd.person_id)
+    where(p.id === "tim") on(p.id << pd.person_id)
   }
 
   def triple = join(patient, personalData, address) { (p, pd, ad) =>
-    where(p.id === "tim") on(p.id hashMany pd.person_id, p.address_id hashOne ad.id)
+    where(p.id === "tim") on(p.id << pd.person_id, p.address_id === ad.id)
   }
 
 }
@@ -64,8 +60,6 @@ class E2EGroupTest extends Spec {
   Patient.init()
 
   Patient.allInfo.fetch.foreach {println}
-
-  Patient.hashOne.fetch.foreach {println}
 
   Patient.hashMany.fetch.foreach {println}
 

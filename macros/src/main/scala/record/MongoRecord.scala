@@ -33,7 +33,7 @@ object MongoRecord extends UtilsMacro {
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"object ${TermName(name.encoded)} extends UField[$tpe, $typ](${name.encoded}, this)"
+      q"object ${TermName(name.encoded)} extends RuntimeField[$tpe, $typ](${name.encoded}, this)"
     }.toList
 
     q"""new Meta[$tpe] {

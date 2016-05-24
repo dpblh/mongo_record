@@ -25,7 +25,7 @@ abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
 
   def find[R](c1: it => SelectState[R]) = SelectQuery[R](this, c1(this), runtimeClass)
 
-  def dynamic[F](field: String) =         UField[C, F](field, this)
+  def dynamic[F](field: String) =         DynamicField[C, F](field, this)
 
   override def toString = collection_name
 
