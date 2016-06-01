@@ -1,7 +1,7 @@
 package record.use_cases.single
 
-import record.{Spec, MongoRecordImpl}
-import MongoRecordImpl._
+import record.Spec
+import record.imports._
 /**
  * Created by tim on 22.04.16.
  */
