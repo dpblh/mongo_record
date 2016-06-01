@@ -16,7 +16,7 @@ trait MongoRecord
   with WhereSignatures
   with MacroWrapper {
 
-  type Meta[C] = MetaTag[C]
+  type Meta[C] = ObjectMetaTag[C]
 
   def meta[T]: MetaTag[T] = macro MongoRecord.metaImpl[T]
 

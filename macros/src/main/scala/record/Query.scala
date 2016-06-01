@@ -26,7 +26,7 @@ case class ModifyQuery[T <: M](c: T, s: ModifyState[_]) extends Query[Boolean] {
   override def execute  =       modifyQuery(this)
 }
 
-case class WhereQuery[C](w: WhereState[C], collection: M) extends Query[Boolean] {
+case class WhereQuery[C](w: WhereState[C], collection: M) extends Query[C] {
   override def execute =        whereQuery(this)
 }
 
@@ -39,6 +39,6 @@ sealed class execute[R]
 case class selectExecute[R]         (collection: String, condition: DBObject, transform: DBObject => R) extends execute[R]
 case class selectFieldsExecute[R]   (collection: String, condition: DBObject, select: DBObject, transform: DBObject => R) extends execute[R]
 case class insertExecute            (collection: String, toBeInsert: DBObject) extends execute[Boolean]
-case class conditionExecute         (collection: String, condition: DBObject) extends execute[Boolean]
+case class conditionExecute[R]      (collection: String, condition: DBObject, transform: DBObject => R) extends execute[R]
 case class updateExecute            (collection: String, condition: DBObject, update: DBObject) extends execute[Boolean]
 case class joinExecute[R]           (collection: String, aggregate: List[DBObject], transform: DBObject => R) extends execute[R]

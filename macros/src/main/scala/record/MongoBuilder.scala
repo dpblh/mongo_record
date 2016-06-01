@@ -16,8 +16,8 @@ object MongoBuilder {
     "db.%s.insert(%s)".format(i.t, i.c.toString)
   }
 
-  def whereQuery(s: WhereQuery[_]):execute[Boolean] = {
-    conditionExecute(s.collection.toString, buildCondition(s.w.c))
+  def whereQuery[R](s: WhereQuery[R]):execute[R] = {
+    conditionExecute(s.collection.toString, buildCondition(s.w.c), a => s.collection.fromDBObject(a).asInstanceOf[R])
   }
 
   def selectQuery[R](s: SelectQuery[R]):execute[R] = {
@@ -29,6 +29,8 @@ object MongoBuilder {
       case e: sf1 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => as(a, e.c1).asInstanceOf[R])
       case e: sf2 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2)).asInstanceOf[R])
       case e: sf3 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3)).asInstanceOf[R])
+      case e: sf4 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4)).asInstanceOf[R])
+      case e: sf5 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5)).asInstanceOf[R])
     }
   }
 

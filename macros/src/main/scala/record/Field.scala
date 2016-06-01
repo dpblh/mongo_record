@@ -29,35 +29,40 @@ trait Field[C, F] extends Make[C] {
 }
 
 trait ObjectField[C, F] extends Field[C, F] {
-  val fieldName: String = {
-    val fullName = getClass.getName
-    val className = fullName.substring(fullName.lastIndexOf(".")+1)
-    val simpleName = className.split("\\$")
-    simpleName(simpleName.length - 1)
-  }
+  val fieldName: String = ReflectionRecord.getName(getClass)
 }
 
 trait BaseFields {
-  case class StringField[C](collection: Make[C]) extends ObjectField[C, String] {
-    override def asDBObject(c: Any): Any        = c
-    override def fromDBObject(dbo: Any): Any    = dbo.toString
+  //AnyVal
+  case class DoubleField[C](collection: Make[C]) extends ObjectField[C, Double]{
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): Double     = dbo.toString.toDouble
+  }
+  case class BooleanField[C](collection: Make[C]) extends ObjectField[C, Boolean]{
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): Boolean    = dbo.toString.toBoolean
   }
   case class IntField[C](collection: Make[C]) extends ObjectField[C, Int]{
-    override def asDBObject(c: Any): Any        = c
-    override def fromDBObject(dbo: Any): Any    = dbo.toString.toInt
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): Int        = dbo.toString.toInt
   }
   case class LongField[C](collection: Make[C]) extends ObjectField[C, Long] {
-    override def asDBObject(c: Any): Any        = c
-    override def fromDBObject(dbo: Any): Any    = dbo.toString.toLong
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): Long       = dbo.toString.toLong
   }
+  case class StringField[C](collection: Make[C]) extends ObjectField[C, String] {
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): String     = dbo.toString
+  }
+  //AnyRef
   case class InnerField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends ObjectField[C, F] {
-    override def asDBObject(c: Any): Any        = DBObjectSerializer.asDBObject(c, runtimeClass)
-    override def fromDBObject(dbo: Any): Any    = DBObjectSerializer.fromDBObject(dbo, runtimeClass)
+    override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass)
+    override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]
     def runtimeClass: Type = typeOf[F]
   }
   case class RuntimeField[C, F](override val fieldName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends Field[C, F] {
-    override def asDBObject(c: Any): Any        = DBObjectSerializer.asDBObject(c, runtimeClass)
-    override def fromDBObject(dbo: Any): Any    = DBObjectSerializer.fromDBObject(dbo, runtimeClass)
+    override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass)
+    override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]
     def runtimeClass: Type = typeOf[F]
   }
 }

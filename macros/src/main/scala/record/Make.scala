@@ -32,7 +32,11 @@ abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
   override def toString = collection_name
 
   def asDBObject(c: Any):Any              =  DBObjectSerializer.asDBObject(c, runtimeClass)
-  def fromDBObject(dbo: Any):Any          =  DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[C]
+  def fromDBObject(dbo: Any):C            =  DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[C]
   def runtimeClass: Type                  =  typeOf[C]
 
+}
+
+abstract class ObjectMetaTag[C: TypeTag] extends MetaTag[C] {
+  override val collection_name:String = ReflectionRecord.getName(getClass)
 }

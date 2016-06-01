@@ -19,6 +19,8 @@ object imports extends MongoRecord {
           db.getCollection(collection).find(condition, select).toArray.toList.map(transform)
         case joinExecute(collection, aggregate, transform) =>
           db.getCollection(collection).aggregate(aggregate).results().toArray.toList.map(transform)
+        case conditionExecute(collection, condition, transform) =>
+          db.getCollection(collection).find(condition).toArray.toList.map(transform)
       }
     }
     def fetchOne[R](query: Query[R]):Option[R] = {
@@ -46,13 +48,13 @@ object imports extends MongoRecord {
     }
     def count(query: Query[_]):Long = {
       query.execute match {
-        case conditionExecute(collection, condition) =>
+        case conditionExecute(collection, condition, transform) =>
           db.getCollection(collection).count(condition)
       }
     }
     def remove(query: Query[_]):Unit = {
       query.execute match {
-        case conditionExecute(collection, condition) =>
+        case conditionExecute(collection, condition, transform) =>
           db.getCollection(collection).remove(condition)
       }
     }

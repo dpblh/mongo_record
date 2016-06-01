@@ -17,6 +17,8 @@ package object record {
   private [record] type sf1 = SelectFields1[_,_]
   private [record] type sf2 = SelectFields2[_,_, _]
   private [record] type sf3 = SelectFields3[_,_, _, _]
+  private [record] type sf4 = SelectFields4[_,_, _, _, _]
+  private [record] type sf5 = SelectFields5[_,_, _, _, _, _]
   private [record] type update = ModifyState[_]
   private [record] type join = Join[_,_,_]
   private [record] type joinOne = JoinOne[_,_,_]
