@@ -17,7 +17,9 @@ object Person extends Meta[Person] {
   override val collection_name: String = "person"
   object name extends StringField(this)
   object age extends IntField(this)
-  object address extends InnerField[Person, Address](this)
+  object address extends InnerField[Person, Address](this) {
+    object region extends StringField(this)
+  }
 
 }
 
@@ -95,6 +97,10 @@ class E2ETest extends Spec {
 
   Person.find { p =>
     where(p.address === Address("Kalinin", "Tver")) select p
+  }.fetch.length shouldBe 1
+
+  Person.find { p =>
+    where(p.address.region === "Kalinin") select p
   }.fetch.length shouldBe 1
 
   Person.find { p =>

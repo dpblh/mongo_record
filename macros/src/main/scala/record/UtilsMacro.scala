@@ -25,6 +25,20 @@ trait UtilsMacro {
     }
   }
 
+  def buildFieldObject(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type):c.Tree = {
+    import c.universe._
+
+    val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
+      val (name, typ) = p
+      buildFieldObject(c)(parentTpe, name, typ)
+    }.toList
+
+    q"""object ${TermName(name.encoded)} extends RuntimeField[$parentTpe, $tpe](${name.encoded}, this) {
+       ..$fields
+       }"""
+
+  }
+
   def camelToUnderscores(name: String) = name.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase
 
   def isSimpleType(c: Context)(tpe: c.universe.Type):Boolean = {

@@ -22,7 +22,7 @@ trait MongoRecord
 
 object MongoRecord extends UtilsMacro {
 
-  def meta[T]: Any = macro metaImpl[T]
+  def meta[T]: MetaTag[T] = macro metaImpl[T]
 
   def metaImpl[T: c.WeakTypeTag](c: Context) = {
     import c.universe._
@@ -33,7 +33,7 @@ object MongoRecord extends UtilsMacro {
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
-      q"object ${TermName(name.encoded)} extends RuntimeField[$tpe, $typ](${name.encoded}, this)"
+      buildFieldObject(c)(tpe, name, typ)
     }.toList
 
     q"""new Meta[$tpe] {
