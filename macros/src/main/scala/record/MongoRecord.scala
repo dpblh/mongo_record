@@ -18,11 +18,11 @@ trait MongoRecord
 
   type Meta[C] = MetaTag[C]
 
+  def meta[T]: MetaTag[T] = macro MongoRecord.metaImpl[T]
+
 }
 
 object MongoRecord extends UtilsMacro {
-
-  def meta[T]: MetaTag[T] = macro metaImpl[T]
 
   def metaImpl[T: c.WeakTypeTag](c: Context) = {
     import c.universe._

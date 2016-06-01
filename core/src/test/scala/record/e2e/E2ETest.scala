@@ -2,7 +2,6 @@ package record.e2e
 
 import record.Spec
 import record.imports._
-import record.MongoRecord._
 /**
  * Created by tim on 09.05.16.
  */
