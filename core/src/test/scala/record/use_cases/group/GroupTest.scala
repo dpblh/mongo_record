@@ -11,12 +11,11 @@ case class Token(person_id: String)
 
 object PersonToken extends MongoRecord {
 
-  object Token extends MetaTag[Token] {
-    override val collection_name: String = "token"
+  object Token extends Meta[Token] {
     object person_id extends StringField(this)
   }
 
-  object PersonService extends MetaTag[Person] {
+  object PersonService extends Meta[Person] {
     override val collection_name: String = "person"
     object id extends StringField(this)
     object name extends StringField(this)
@@ -41,7 +40,7 @@ class GroupTest extends Spec {
       |   "from": "token",
       |   "localField": "id",
       |   "foreignField": "person_id",
-      |   "as": "copies_sold"
+      |   "as": "person_token__person_id"
       | }
       |}])
     """.stripMargin)

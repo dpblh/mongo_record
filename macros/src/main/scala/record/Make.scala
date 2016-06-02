@@ -38,5 +38,5 @@ abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
 }
 
 abstract class ObjectMetaTag[C: TypeTag] extends MetaTag[C] {
-  override val collection_name:String = ReflectionRecord.getName(getClass)
+  override val collection_name:String = ReflectionRecord.getNameAsUnderscores(getClass)
 }

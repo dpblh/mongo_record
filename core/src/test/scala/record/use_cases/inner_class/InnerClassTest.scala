@@ -11,8 +11,7 @@ case class Address(street: String)
 
 class InnerClassTest extends Spec with MongoRecord {
 
-  object person extends MetaTag[Person] { self =>
-    override val collection_name: String = "person"
+  object person extends Meta[Person] {
     object id extends StringField(this)
     object email extends StringField(this)
 
@@ -34,7 +33,7 @@ class InnerClassTest extends Spec with MongoRecord {
         p.personData.firstName === "tim" &&
         p.personData.address.street === "Tver"
     ) select p
-  }, """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.firstName" : "tim"}]} , { "person_data.address.street" : "Tver"}]})""")
+  }, """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "personData.firstName" : "tim"}]} , { "personData.address.street" : "Tver"}]})""")
 
 
   yes(from(person) { p =>
@@ -43,7 +42,7 @@ class InnerClassTest extends Spec with MongoRecord {
         p.personData.firstName === "tim" &&
         p.personData.address.street === "Tver" &&
         p.personData.address === Address("Tver")
-    ) select p}, """db.person.find({ "$and" : [ { "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.firstName" : "tim"}]} , { "person_data.address.street" : "Tver"}]} , { "person_data.address" : { "street" : "Tver"}}]})""")
+    ) select p}, """db.person.find({ "$and" : [ { "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "personData.firstName" : "tim"}]} , { "personData.address.street" : "Tver"}]} , { "personData.address" : { "street" : "Tver"}}]})""")
 
 
 }
