@@ -11,17 +11,15 @@ import scala.reflect.runtime.universe._
  */
 object mongo {
 
-  def asSimpleType(o: Any):Any = {
-    o match {
-      case x: BigInt              => x.toString()
-      case x: BigDecimal          => x.toString()
-      case x => x
-    }
+  def asSimpleType(o: Any):Any = o match {
+    case x: BigInt              => x.toString()
+    case x: BigDecimal          => x.toString()
+    case x => x
   }
 
-  def asDate(o: Any):Any          = o match {
-    case x: Date                  => x.getTime
-    case x: Calendar              => x.getTimeInMillis
+  def asDate(o: Any):Any = o match {
+    case x: Date          => x.getTime
+    case x: Calendar      => x.getTimeInMillis
   }
 
   def asOption(o: Any, tup: Type):Any = o match {
@@ -37,19 +35,19 @@ object mongo {
     list
   }
 
-  def asMap(x1: Any, tup: Type):Any = {
+  def asMap(o: Any, tup: Type):Any = {
     val builder = BasicDBObjectBuilder.start()
-    x1.asInstanceOf[Map[String,_]].foreach { tupl =>
+    o.asInstanceOf[Map[String,_]].foreach { tupl =>
       val (key, value) = tupl
       builder.append(key, asDBObject(value, tup.typeArgs(1)))
     }
     builder.get()
   }
 
-  def asCase(value: Any, tup: Type):Any = {
+  def asCase(o: Any, tup: Type):Any = {
     val builder = BasicDBObjectBuilder.start()
-    val mirror = runtimeMirror(value.getClass.getClassLoader)
-    val xm = mirror reflect value
+    val mirror = runtimeMirror(o.getClass.getClassLoader)
+    val xm = mirror reflect o
     tup.decls.collect {
       case acc: MethodSymbol if acc.isCaseAccessor =>
         val value = (xm reflectMethod acc)()
