@@ -83,6 +83,11 @@ trait BaseFields {
     override def fromDBObject(dbo: Any): String     = dbo.toString
   }
   //AnyRef
+  case class OptionField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends ObjectField[C, Option[F]]{
+    override def asDBObject(c: Any): Any                    = DBObjectSerializer.asDBObject(c, runtimeClass)
+    override def fromDBObject(dbo: Any): Option[F] = if (dbo != null) Some(DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]) else None
+    def runtimeClass: Type = typeOf[F]
+  }
   case class InnerField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends ObjectField[C, F] {
     override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass)
     override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]

@@ -20,6 +20,7 @@ object DBObjectSerializer {
     tpe match {
       case x if scalaz.isSimpleType(x)    => scalaz.asSimpleType(value, x)
       case x if scalaz.isDate(x)          => scalaz.asDate(x, value)
+      case x if scalaz.isOption(x)        => scalaz.asOption(x, value)
       case x =>
         value match {
           case y: BasicDBList => scalaz.asCollection(y, x)
@@ -73,9 +74,10 @@ object DBObjectSerializer {
       val value = (xm reflectMethod acc)()
       val returnValue = acc.returnType match {
 
-        case x if scalaz.isSimpleType(x) => mongo.asSimpleType(value, acc.typeSignature)
-        case x if scalaz.isDate(x) => mongo.asDate(value)
-        case x => a2dbObject(value, acc.typeSignature)
+        case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value, acc.typeSignature)
+        case x if scalaz.isDate(x)        => mongo.asDate(value)
+        case x if scalaz.isOption(x)      => mongo.asOption(value, x)
+        case x                            => a2dbObject(value, acc.typeSignature)
 
       }
       (acc.name.decodedName.toString, returnValue)
@@ -98,6 +100,10 @@ object DBObjectSerializer {
     def asDate(o: Any):Any          = o match {
       case x: Date                  => x.getTime
       case x: Calendar              => x.getTimeInMillis
+    }
+    def asOption(o: Any, tup: Type):Any = o match {
+      case Some(x)   => asDBObject(x, tup.typeArgs.head)
+      case None      => null
     }
     def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
   }
@@ -133,6 +139,11 @@ object DBObjectSerializer {
         case x if tup <:< typeOf[Seq[_]]=> o.toList
       }
       collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
+    }
+    def isOption(`type`: Type): Boolean = `type` <:< typeOf[Option[Any]]
+    def asOption(`type`: Type, o: Any):Any = o match {
+      case null     =>  None
+      case x        =>  Some(fromDBObject(x, `type`.typeArgs.head))
     }
 
     val simpleTypes = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
