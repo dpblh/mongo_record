@@ -13,7 +13,7 @@ import scala.reflect.runtime.universe._
  */
 object scalaz {
 
-  def isSimpleType(`type`: Type): Boolean     = simpleTypes.exists(_ =:= `type`)
+  def isSimpleType(tup: Type): Boolean     = simpleTypes.exists(_ =:= tup)
 
   def asSimpleType(o: Any, tup: Type):Any     = tup match {
     case x if x =:= typeOf[Int]               => o.asInstanceOf[java.lang.Integer].toInt
@@ -26,21 +26,21 @@ object scalaz {
     case _                                    => o
   }
 
-  def isDate(`type`: Type): Boolean           = dates.exists(_ =:= `type`)
+  def isDate(tup: Type): Boolean           = dates.exists(_ =:= tup)
 
-  def asDate(`type`: Type, o: Any):Any  = {
+  def asDate(tup: Type, o: Any):Any  = {
     val milis = o match {
       case x: BigDecimal  => x.longValue()
       case x: Double      => x.toLong
       case x              => x.toString.toLong
     }
-    `type` match {
+    tup match {
       case x if x =:= typeOf[Date]              => new Date(milis)
       case x if x =:= typeOf[Calendar]          => UtilsRecord.asCalendar(milis)
     }
   }
 
-  def isCollection(`type`: Type):Boolean = `type` <:< typeOf[Iterable[_]]
+  def isCollection(tup: Type):Boolean = tup <:< typeOf[Iterable[_]]
 
   def asCollection(tup: Type, o: Any):Any = {
     val dbo = o.asInstanceOf[BasicDBList]
@@ -53,25 +53,25 @@ object scalaz {
     collection.map( o => fromDBObject(o, tup.typeArgs.head))
   }
 
-  def isOption(`type`: Type): Boolean = `type` <:< typeOf[Option[Any]]
+  def isOption(tup: Type): Boolean = tup <:< typeOf[Option[Any]]
 
-  def asOption(`type`: Type, o: Any):Any = o match {
+  def asOption(tup: Type, o: Any):Any = o match {
     case null     =>  None
-    case x        =>  Some(fromDBObject(x, `type`.typeArgs.head))
+    case x        =>  Some(fromDBObject(x, tup.typeArgs.head))
   }
 
-  def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
+  def isMap(tup: Type):Boolean = tup <:< typeOf[Map[String,_]]
 
-  def isCase(`type`: Type):Boolean = {
-    `type`.decls.collect {
+  def isCase(tup: Type):Boolean = {
+    tup.decls.collect {
       case m: MethodSymbol if m.isCaseAccessor => m.name.toString
     }.nonEmpty
   }
-  def asClass(`type`: Type, y: BasicDBObject):Any = {
+  def asClass(tup: Type, y: BasicDBObject):Any = {
     val rm = runtimeMirror(getClass.getClassLoader)
-    val classTest = `type`.typeSymbol.asClass
+    val classTest = tup.typeSymbol.asClass
     val classMirror = rm.reflectClass(classTest)
-    val constructor = `type`.decl(termNames.CONSTRUCTOR).asMethod
+    val constructor = tup.decl(termNames.CONSTRUCTOR).asMethod
     val constructorMirror = classMirror.reflectConstructor(constructor)
     val constructorArgs = constructor.paramLists.flatten.map { param =>
       val name = param.name.toString
