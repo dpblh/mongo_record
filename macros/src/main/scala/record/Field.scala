@@ -34,6 +34,18 @@ trait ObjectField[C, F] extends Field[C, F] {
 
 trait BaseFields {
   //AnyVal
+  case class CalendarField[C](collection: Make[C]) extends ObjectField[C, java.util.Calendar]{
+    override def asDBObject(c: Any): Any                    = c.toString.toLong
+    override def fromDBObject(dbo: Any): java.util.Calendar = UtilsRecord.asCalendar(dbo.toString.toLong)
+  }
+  case class DateField[C](collection: Make[C]) extends ObjectField[C, java.util.Date]{
+    override def asDBObject(c: Any): Any                = c.toString.toLong
+    override def fromDBObject(dbo: Any): java.util.Date = new java.util.Date(dbo.toString.toLong)
+  }
+  case class BigDecimalField[C](collection: Make[C]) extends ObjectField[C, BigDecimal]{
+    override def asDBObject(c: Any): Any            = c.toString
+    override def fromDBObject(dbo: Any): BigDecimal = BigDecimal(dbo.toString)
+  }
   case class BigIntField[C](collection: Make[C]) extends ObjectField[C, BigInt]{
     override def asDBObject(c: Any): Any            = c.toString
     override def fromDBObject(dbo: Any): BigInt     = BigInt(dbo.toString)

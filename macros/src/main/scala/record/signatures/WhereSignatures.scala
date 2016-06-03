@@ -60,6 +60,39 @@ case class WhereState[C](c: Expression[C]) extends ModifyState[C] {
                                      c7: Field[C, F7],
                                      c8: Field[C, F8],
                                      c9: Field[C, F9])  =     SelectFields9(c, c1, c2, c3, c4, c5, c6, c7, c8, c9)
+  def select[F1, F2, F3, F4, F5, F6, F7, F8, F9, F10](c1: Field[C, F1],
+                                                 c2: Field[C, F2],
+                                                 c3: Field[C, F3],
+                                                 c4: Field[C, F4],
+                                                 c5: Field[C, F5],
+                                                 c6: Field[C, F6],
+                                                 c7: Field[C, F7],
+                                                 c8: Field[C, F8],
+                                                 c9: Field[C, F9],
+                                                 c10: Field[C, F10])  =     SelectFields10(c, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
+  def select[F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11](c1: Field[C, F1],
+                                                      c2: Field[C, F2],
+                                                      c3: Field[C, F3],
+                                                      c4: Field[C, F4],
+                                                      c5: Field[C, F5],
+                                                      c6: Field[C, F6],
+                                                      c7: Field[C, F7],
+                                                      c8: Field[C, F8],
+                                                      c9: Field[C, F9],
+                                                      c10: Field[C, F10],
+                                                      c11: Field[C, F11])  =     SelectFields11(c, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11)
+  def select[F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12](c1: Field[C, F1],
+                                                           c2: Field[C, F2],
+                                                           c3: Field[C, F3],
+                                                           c4: Field[C, F4],
+                                                           c5: Field[C, F5],
+                                                           c6: Field[C, F6],
+                                                           c7: Field[C, F7],
+                                                           c8: Field[C, F8],
+                                                           c9: Field[C, F9],
+                                                           c10: Field[C, F10],
+                                                           c11: Field[C, F11],
+                                                           c12: Field[C, F12])  =     SelectFields12(c, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
 
 
   def on[C1, F](f: => Join[C,C1,F]) = JoinStateYield1(c, f)
@@ -80,3 +113,6 @@ case class SelectFields6[C, F1, F2, F3, F4, F5, F6](w: Expression[_], c1: Field[
 case class SelectFields7[C, F1, F2, F3, F4, F5, F6, F7](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7)]
 case class SelectFields8[C, F1, F2, F3, F4, F5, F6, F7, F8](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7], c8: Field[C, F8]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7, F8)]
 case class SelectFields9[C, F1, F2, F3, F4, F5, F6, F7, F8, F9](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7], c8: Field[C, F8], c9: Field[C, F9]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7, F8, F9)]
+case class SelectFields10[C, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7], c8: Field[C, F8], c9: Field[C, F9], c10: Field[C, F10]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10)]
+case class SelectFields11[C, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7], c8: Field[C, F8], c9: Field[C, F9], c10: Field[C, F10], c11: Field[C, F11]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11)]
+case class SelectFields12[C, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12](w: Expression[_], c1: Field[C, F1], c2: Field[C, F2], c3: Field[C, F3], c4: Field[C, F4], c5: Field[C, F5], c6: Field[C, F6], c7: Field[C, F7], c8: Field[C, F8], c9: Field[C, F9], c10: Field[C, F10], c11: Field[C, F11], c12: Field[C, F12]) extends SelectState[(F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12)]

@@ -18,11 +18,11 @@ object DBObjectSerializer {
 
   def fromDBObject(value: Any, tpe: Type):Any = {
     tpe match {
-      case x if isPrimitive(x) => dbPrimitive2primitive(value, x)
-      case x if isDate(x) => any2date(x, value)
+      case x if scalaz.isSimpleType(x)    => scalaz.asSimpleType(value, x)
+      case x if scalaz.isDate(x)          => scalaz.asDate(x, value)
       case x =>
         value match {
-          case y: BasicDBList => basicDBList2list(y, x)
+          case y: BasicDBList => scalaz.asCollection(y, x)
           case y: BasicDBObject =>
             val rm = runtimeMirror(getClass.getClassLoader)
             val classTest = tpe.typeSymbol.asClass
@@ -41,15 +41,6 @@ object DBObjectSerializer {
 
   }
 
-  def basicDBList2list(o: BasicDBList, tup: Type):Any = {
-    val collection = tup match {
-      case x if tup <:< typeOf[List[_]] => o.toList
-      case x if tup <:< typeOf[Set[_]]=> o.toSet
-      case x if tup <:< typeOf[Seq[_]]=> o.toList
-    }
-    collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
-  }
-
   def asDBObject[T](entity: T, tup: Type):Any = {
     val mirror = runtimeMirror(entity.getClass.getClassLoader)
 
@@ -61,7 +52,7 @@ object DBObjectSerializer {
 
       if (members.isEmpty) {
         x match {
-          case x1 if isMap(t) =>
+          case x1 if mongo.isMap(t) =>
             val builder = BasicDBObjectBuilder.start()
             x1.asInstanceOf[Map[String,_]].foreach { tupl =>
               val (key, value) = tupl
@@ -82,8 +73,8 @@ object DBObjectSerializer {
       val value = (xm reflectMethod acc)()
       val returnValue = acc.returnType match {
 
-        case x if isPrimitive(x) => primitive2dbPrimitive(value)
-        case x if isDate(x) => any2DBDate(value)
+        case x if scalaz.isSimpleType(x) => mongo.asSimpleType(value, acc.typeSignature)
+        case x if scalaz.isDate(x) => mongo.asDate(value)
         case x => a2dbObject(value, acc.typeSignature)
 
       }
@@ -96,55 +87,60 @@ object DBObjectSerializer {
 
   def asDBObject[A: TypeTag](entity: A):Any = asDBObject(entity, typeOf[A])
 
-  def isMap(`type`: Type):        Boolean = `type` <:< typeOf[Map[String,_]]
-  def isDate(`type`: Type):       Boolean = dates.exists(_ =:= `type`)
-  def isPrimitive(`type`: Type):  Boolean = primitives.exists(_ =:= `type`)
-
-  def any2DBDate(o: Any):Any = o match {
-    case x: Date     => x.getTime
-    case x: Calendar => x.getTimeInMillis
+  object mongo {
+    def asSimpleType(o: Any, tup: Type):Any = {
+      o match {
+        case x: BigInt              => x.toString()
+        case x: BigDecimal          => x.toString()
+        case x => x
+      }
+    }
+    def asDate(o: Any):Any          = o match {
+      case x: Date                  => x.getTime
+      case x: Calendar              => x.getTimeInMillis
+    }
+    def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
   }
 
-  def primitive2dbPrimitive(o: Any):Any = {
-    o match {
-      case x: BigInt => x.toString()
-      case x => x
+  object scalaz {
+    def isSimpleType(`type`: Type): Boolean     = simpleTypes.exists(_ =:= `type`)
+    def asSimpleType(o: Any, tup: Type):Any     = tup match {
+      case x if x =:= typeOf[Int]               => o.asInstanceOf[java.lang.Integer].toInt
+      case x if x =:= typeOf[Float]             => o.asInstanceOf[Double].toFloat
+      case x if x =:= typeOf[Byte]              => o.toString.toByte
+      case x if x =:= typeOf[BigDecimal]        => BigDecimal(o.toString)
+      case x if x =:= typeOf[BigInt]            => BigInt(o.toString)
+      case x: CharSequence                      => x.toString
+      //Long, String, Double, Boolean, Array[Byte]
+      case _                                    => o
     }
+    def isDate(`type`: Type): Boolean           = dates.exists(_ =:= `type`)
+    def asDate(`type`: Type, o: Any):Any        = {
+      val milis = o match {
+        case x: BigDecimal  => x.longValue()
+        case x: Double      => x.toLong
+        case x              => x.toString.toLong
+      }
+      `type` match {
+        case x if x =:= typeOf[Date]              => new Date(milis)
+        case x if x =:= typeOf[Calendar]          => UtilsRecord.asCalendar(milis)
+      }
+    }
+    def asCollection(o: BasicDBList, tup: Type):Any = {
+      val collection = tup match {
+        case x if tup <:< typeOf[List[_]] => o.toList
+        case x if tup <:< typeOf[Set[_]]=> o.toSet
+        case x if tup <:< typeOf[Seq[_]]=> o.toList
+      }
+      collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
+    }
+
+    val simpleTypes = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
+      typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[BigDecimal], typeOf[Boolean],
+      typeOf[Array[Byte]])
+
+    val dates = Set(typeOf[Date], typeOf[Calendar])
+
   }
-
-  def dbPrimitive2primitive(o: Any, tup: Type):Any = {
-    val typeOfInt = typeOf[Int]
-    tup match {
-      case `typeOfInt` =>
-        o match {
-          case y: BigDecimal => y.intValue()
-          case y: Double => y.intValue()
-          case y: java.lang.Integer => y.toInt
-        }
-      case x: CharSequence => x.toString
-      case _ => o
-    }
-  }
-
-  def any2date(`type`: Type, o: Any):Any = {
-    val milis = o match {
-      case y: BigDecimal => y.toLong
-      case y: Double => y.toLong
-    }
-    `type` match {
-      case x if x =:= typeOf[Date] => new Date(milis)
-      case x if x =:= typeOf[Calendar] =>
-        val date = Calendar.getInstance()
-        date.setTimeInMillis(milis)
-        date
-    }
-  }
-
-  val lists = Set(typeOf[List[_]], typeOf[Set[_]], typeOf[Seq[_]])
-  val dates = Set(typeOf[Date], typeOf[Calendar])
-  val primitives = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
-    typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[Boolean],
-    typeOf[Short], typeOf[scala.Array[Byte]])
-
 
 }

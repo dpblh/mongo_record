@@ -35,6 +35,9 @@ object MongoBuilder {
       case e: sf7 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7)).asInstanceOf[R])
       case e: sf8 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8)).asInstanceOf[R])
       case e: sf9 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8), as(a, e.c9)).asInstanceOf[R])
+      case e: sf10 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8), as(a, e.c9), as(a, e.c10)).asInstanceOf[R])
+      case e: sf11 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8), as(a, e.c9), as(a, e.c10), as(a, e.c11)).asInstanceOf[R])
+      case e: sf12 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8), as(a, e.c9), as(a, e.c10), as(a, e.c11), as(a, e.c12)).asInstanceOf[R])
     }
   }
 
