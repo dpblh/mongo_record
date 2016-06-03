@@ -51,8 +51,8 @@ object mongo {
     tup.decls.collect {
       case acc: MethodSymbol if acc.isCaseAccessor =>
         val value = (xm reflectMethod acc)()
-        (acc.name.decodedName.toString, asDBObject(value, acc.returnType))
-    } foreach { a => builder.append(a._1, a._2) }
+        builder.append(acc.name.decodedName.toString, asDBObject(value, acc.returnType))
+    }
     builder.get()
   }
 
