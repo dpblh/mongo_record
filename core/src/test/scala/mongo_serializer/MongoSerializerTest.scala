@@ -3,7 +3,8 @@ package mongo_serializer
 import java.util.Date
 
 import com.mongodb.{BasicDBList, BasicDBObjectBuilder}
-import record.{DBObjectSerializer, Spec}
+import record.Spec
+import record.serializer.DBObjectSerializer
 
 /**
  * Created by tim on 14.05.16.
