@@ -28,44 +28,14 @@ object DBObjectSerializer {
   }
 
   def asDBObject[A: TypeTag](entity: A):Any = asDBObject(entity, typeOf[A])
-  def asDBObject[T](entity: T, tup: Type):Any = {
-    val mirror = runtimeMirror(entity.getClass.getClassLoader)
-
-    def a2dbObject(x: Any, t: Type): Any = {
-      val xm = mirror reflect x
-      val members = t.decls.collect {
-        case acc: MethodSymbol if acc.isCaseAccessor => fieldAsTuple(acc, xm)
-      }
-
-      if (members.isEmpty) {
-        x match {
-          case x1 if scalaz.isMap(t) => mongo.asMap(x1, t)
-          case _                        => x
-        }
-      } else {
-        val builder = BasicDBObjectBuilder.start()
-
-        members.foreach { a => builder.append(a._1, a._2) }
-        builder.get()
-      }
-    }
-
-    def fieldAsTuple(acc: MethodSymbol, xm: InstanceMirror):(String, Any) = {
-      val value = (xm reflectMethod acc)()
-      val returnValue = acc.returnType match {
-
-        case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value)
-        case x if scalaz.isDate(x)        => mongo.asDate(value)
-        case x if scalaz.isOption(x)      => mongo.asOption(value, x)
-        case x if scalaz.isCollection(x)  => mongo.asCollection(value, x)
-        case x                            => a2dbObject(value, acc.typeSignature)
-
-      }
-      (acc.name.decodedName.toString, returnValue)
-    }
-
-    a2dbObject(entity, tup)
-
+  def asDBObject[T](value: T, tup: Type):Any = tup match {
+    case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value)
+    case x if scalaz.isDate(x)        => mongo.asDate(value)
+    case x if scalaz.isOption(x)      => mongo.asOption(value, x)
+    case x if scalaz.isMap(x)         => mongo.asMap(value, x)
+    case x if scalaz.isCollection(x)  => mongo.asCollection(value, x)
+    case x if scalaz.isCase(x)        => mongo.asCase(value, x)
+    case x                            => throw DBObjectSerializerException("Unsupported type %s %s".format(x, value))
   }
 
 }

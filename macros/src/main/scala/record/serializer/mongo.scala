@@ -46,4 +46,16 @@ object mongo {
     builder.get()
   }
 
+  def asCase(value: Any, tup: Type):Any = {
+    val builder = BasicDBObjectBuilder.start()
+    val mirror = runtimeMirror(value.getClass.getClassLoader)
+    val xm = mirror reflect value
+    tup.decls.collect {
+      case acc: MethodSymbol if acc.isCaseAccessor =>
+        val value = (xm reflectMethod acc)()
+        (acc.name.decodedName.toString, asDBObject(value, acc.returnType))
+    } foreach { a => builder.append(a._1, a._2) }
+    builder.get()
+  }
+
 }

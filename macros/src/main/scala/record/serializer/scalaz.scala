@@ -62,6 +62,11 @@ object scalaz {
 
   def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
 
+  def isCase(`type`: Type):Boolean = {
+    `type`.decls.collect {
+      case m: MethodSymbol if m.isCaseAccessor => m.name.toString
+    }.nonEmpty
+  }
   def asClass(`type`: Type, y: BasicDBObject):Any = {
     val rm = runtimeMirror(getClass.getClassLoader)
     val classTest = `type`.typeSymbol.asClass
