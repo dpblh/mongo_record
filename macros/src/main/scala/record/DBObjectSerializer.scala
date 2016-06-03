@@ -74,9 +74,10 @@ object DBObjectSerializer {
       val value = (xm reflectMethod acc)()
       val returnValue = acc.returnType match {
 
-        case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value, acc.typeSignature)
+        case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value)
         case x if scalaz.isDate(x)        => mongo.asDate(value)
         case x if scalaz.isOption(x)      => mongo.asOption(value, x)
+        case x if scalaz.isCollection(x)  => mongo.asCollection(value, x)
         case x                            => a2dbObject(value, acc.typeSignature)
 
       }
@@ -90,7 +91,7 @@ object DBObjectSerializer {
   def asDBObject[A: TypeTag](entity: A):Any = asDBObject(entity, typeOf[A])
 
   object mongo {
-    def asSimpleType(o: Any, tup: Type):Any = {
+    def asSimpleType(o: Any):Any = {
       o match {
         case x: BigInt              => x.toString()
         case x: BigDecimal          => x.toString()
@@ -104,6 +105,13 @@ object DBObjectSerializer {
     def asOption(o: Any, tup: Type):Any = o match {
       case Some(x)   => asDBObject(x, tup.typeArgs.head)
       case None      => null
+    }
+    def asCollection(o: Any, tup: Type):Any = {
+      val list = new BasicDBList()
+      o.asInstanceOf[Iterable[_]].foreach { element =>
+        list.add(asDBObject(element, tup.typeArgs.head).asInstanceOf[AnyRef])//TODO AnyRef ?
+      }
+      list
     }
     def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
   }
@@ -132,13 +140,15 @@ object DBObjectSerializer {
         case x if x =:= typeOf[Calendar]          => UtilsRecord.asCalendar(milis)
       }
     }
+    def isCollection(`type`: Type):Boolean = `type` <:< typeOf[Iterable[_]]
     def asCollection(o: BasicDBList, tup: Type):Any = {
       val collection = tup match {
         case x if tup <:< typeOf[List[_]] => o.toList
         case x if tup <:< typeOf[Set[_]]=> o.toSet
         case x if tup <:< typeOf[Seq[_]]=> o.toList
+        case x => throw DBObjectSerializerException("Unsupported collection type %s".format(tup.toString))
       }
-      collection.map( o => fromDBObject(o.asInstanceOf[DBObject], tup.typeArgs.head))
+      collection.map( o => fromDBObject(o, tup.typeArgs.head))
     }
     def isOption(`type`: Type): Boolean = `type` <:< typeOf[Option[Any]]
     def asOption(`type`: Type, o: Any):Any = o match {
