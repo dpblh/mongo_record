@@ -53,14 +53,8 @@ object DBObjectSerializer {
 
       if (members.isEmpty) {
         x match {
-          case x1 if mongo.isMap(t) =>
-            val builder = BasicDBObjectBuilder.start()
-            x1.asInstanceOf[Map[String,_]].foreach { tupl =>
-              val (key, value) = tupl
-              builder.append(key, a2dbObject(value, tup.typeArgs(1)))
-            }
-            builder.get()
-          case _ => x
+          case x1 if scalaz.isMap(t) => mongo.asMap(x1, t)
+          case _                        => x
         }
       } else {
         val builder = BasicDBObjectBuilder.start()
@@ -113,7 +107,14 @@ object DBObjectSerializer {
       }
       list
     }
-    def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
+    def asMap(x1: Any, tup: Type):Any = {
+      val builder = BasicDBObjectBuilder.start()
+      x1.asInstanceOf[Map[String,_]].foreach { tupl =>
+        val (key, value) = tupl
+        builder.append(key, asDBObject(value, tup.typeArgs(1)))
+      }
+      builder.get()
+    }
   }
 
   object scalaz {
@@ -155,6 +156,7 @@ object DBObjectSerializer {
       case null     =>  None
       case x        =>  Some(fromDBObject(x, `type`.typeArgs.head))
     }
+    def isMap(`type`: Type):Boolean = `type` <:< typeOf[Map[String,_]]
 
     val simpleTypes = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
       typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[BigDecimal], typeOf[Boolean],
