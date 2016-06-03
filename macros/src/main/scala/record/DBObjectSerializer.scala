@@ -82,7 +82,7 @@ object DBObjectSerializer {
       val value = (xm reflectMethod acc)()
       val returnValue = acc.returnType match {
 
-        case x if isPrimitive(x) => value
+        case x if isPrimitive(x) => primitive2dbPrimitive(value)
         case x if isDate(x) => any2DBDate(value)
         case x => a2dbObject(value, acc.typeSignature)
 
@@ -103,6 +103,13 @@ object DBObjectSerializer {
   def any2DBDate(o: Any):Any = o match {
     case x: Date     => x.getTime
     case x: Calendar => x.getTimeInMillis
+  }
+
+  def primitive2dbPrimitive(o: Any):Any = {
+    o match {
+      case x: BigInt => x.toString()
+      case x => x
+    }
   }
 
   def dbPrimitive2primitive(o: Any, tup: Type):Any = {
@@ -137,10 +144,7 @@ object DBObjectSerializer {
   val dates = Set(typeOf[Date], typeOf[Calendar])
   val primitives = Set[Type](typeOf[String], typeOf[Int], typeOf[Long], typeOf[Double],
     typeOf[Float], typeOf[Byte], typeOf[BigInt], typeOf[Boolean],
-    typeOf[Short], typeOf[java.lang.Integer], typeOf[java.lang.Long],
-    typeOf[java.lang.Double], typeOf[java.lang.Float],
-    typeOf[java.lang.Byte], typeOf[java.lang.Boolean],
-    typeOf[java.lang.Short], typeOf[scala.Array[Byte]])
+    typeOf[Short], typeOf[scala.Array[Byte]])
 
 
 }

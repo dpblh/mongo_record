@@ -25,12 +25,16 @@ object MongoBuilder {
     def as(a:DBObject, e: Field[_,_]) = e.fromDBObject(a.get(e.fieldName))
 
     s.s match {
-      case e: se => se(s.c.toString, buildCondition(s.s.w), a => s.c.fromDBObject(a).asInstanceOf[R])
+      case e: se  => se(s.c.toString, buildCondition(s.s.w), a => s.c.fromDBObject(a).asInstanceOf[R])
       case e: sf1 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => as(a, e.c1).asInstanceOf[R])
       case e: sf2 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2)).asInstanceOf[R])
       case e: sf3 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3)).asInstanceOf[R])
       case e: sf4 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4)).asInstanceOf[R])
       case e: sf5 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5)).asInstanceOf[R])
+      case e: sf6 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6)).asInstanceOf[R])
+      case e: sf7 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7)).asInstanceOf[R])
+      case e: sf8 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8)).asInstanceOf[R])
+      case e: sf9 => sf(s.c.toString, buildCondition(s.s.w), buildSelectFields(s.s), a => (as(a, e.c1), as(a, e.c2), as(a, e.c3), as(a, e.c4), as(a, e.c5), as(a, e.c6), as(a, e.c7), as(a, e.c8), as(a, e.c9)).asInstanceOf[R])
     }
   }
 

@@ -34,6 +34,22 @@ trait ObjectField[C, F] extends Field[C, F] {
 
 trait BaseFields {
   //AnyVal
+  case class BigIntField[C](collection: Make[C]) extends ObjectField[C, BigInt]{
+    override def asDBObject(c: Any): Any            = c.toString
+    override def fromDBObject(dbo: Any): BigInt     = BigInt(dbo.toString)
+  }
+  case class ByteArrayField[C](collection: Make[C]) extends ObjectField[C, Array[Byte]]{
+    override def asDBObject(c: Any): Any            = c
+    override def fromDBObject(dbo: Any): Array[Byte]= dbo.asInstanceOf[Array[Byte]]
+  }
+  case class ByteField[C](collection: Make[C]) extends ObjectField[C, Byte]{
+    override def asDBObject(c: Any): Any            = c.toString.toInt
+    override def fromDBObject(dbo: Any): Byte       = dbo.toString.toByte
+  }
+  case class FloatField[C](collection: Make[C]) extends ObjectField[C, Float]{
+    override def asDBObject(c: Any): Any            = c.toString.toDouble
+    override def fromDBObject(dbo: Any): Float      = dbo.toString.toFloat
+  }
   case class DoubleField[C](collection: Make[C]) extends ObjectField[C, Double]{
     override def asDBObject(c: Any): Any            = c
     override def fromDBObject(dbo: Any): Double     = dbo.toString.toDouble
