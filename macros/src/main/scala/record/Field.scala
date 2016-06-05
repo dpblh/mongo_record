@@ -8,7 +8,6 @@ import scala.reflect.runtime.universe._
  */
 trait Field[C, F] extends Make[C] {
 
-  val fieldName: String
   val collection: Make[C]
 
   def ===[C1](joined: Field[C1, F])           =   JoinOne(this, joined)
@@ -22,15 +21,16 @@ trait Field[C, F] extends Make[C] {
 
   override def toString = {
     collection match {
-      case x: MetaTag[C] => fieldName
-      case x: Field[C, _] => x+"."+fieldName
+      case x: MetaTag[C] => entityName
+      case x: Field[C, _] => x+"."+entityName
     }
   }
 
 }
 
 trait ObjectField[C, F] extends Field[C, F] {
-  val fieldName: String = ReflectionRecord.getName(getClass)
+  val originName: String  = ReflectionRecord.getName(getClass)
+  val entityName: String  = ReflectionRecord.camelToUnderscores(originName)
 }
 
 trait BaseFields {
@@ -85,18 +85,19 @@ trait BaseFields {
   }
   //AnyRef
   case class OptionField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends ObjectField[C, Option[F]]{
-    override def asDBObject(c: Any): Any                    = DBObjectSerializer.asDBObject(c, runtimeClass)
-    override def fromDBObject(dbo: Any): Option[F] = if (dbo != null) Some(DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]) else None
+    override def asDBObject(c: Any): Any                    = DBObjectSerializer.asDBObject(c, runtimeClass, None)
+    override def fromDBObject(dbo: Any): Option[F]          = if (dbo != null) Some(DBObjectSerializer.fromDBObject(dbo, runtimeClass, None).asInstanceOf[F]) else None
     def runtimeClass: Type = typeOf[F]
   }
   case class InnerField[C, F](collection: Make[C])(implicit t: TypeTag[F]) extends ObjectField[C, F] {
-    override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass)
-    override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]
+    override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass, None)
+    override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass, None).asInstanceOf[F]
     def runtimeClass: Type = typeOf[F]
   }
-  case class RuntimeField[C, F](override val fieldName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends Field[C, F] {
-    override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass)
-    override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[F]
-    def runtimeClass: Type = typeOf[F]
-  }
+}
+case class RuntimeField[C, F](override val entityName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends Field[C, F] {
+  override val originName: String = entityName
+  override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass, None)
+  override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass, None).asInstanceOf[F]
+  def runtimeClass: Type = typeOf[F]
 }

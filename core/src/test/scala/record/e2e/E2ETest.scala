@@ -13,11 +13,11 @@ case class Person(name: String, age: Int, address: Address) {
 
 object Person extends Meta[Person] {
 
-  override val collection_name: String = "person"
   object name extends StringField(this)
   object age extends IntField(this)
   object address extends InnerField[Person, Address](this) {
     object region extends StringField(this)
+    object city extends StringField(this)
   }
 
 }

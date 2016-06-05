@@ -22,7 +22,7 @@ object MongoBuilder {
 
   def selectQuery[R](s: SelectQuery[R]):execute[R] = {
 
-    def as(a:DBObject, e: Field[_,_]) = e.fromDBObject(a.get(e.fieldName))
+    def as(a:DBObject, e: Field[_,_]) = e.fromDBObject(a.get(e.entityName))
 
     s.s match {
       case e: se  => se(s.c.toString, buildCondition(s.s.w), a => s.c.fromDBObject(a).asInstanceOf[R])
@@ -65,7 +65,7 @@ object MongoBuilder {
   def joinQuery[R](join: JoinQuery[R]):execute[R] = {
 
     def relation(j: join, dbo: DBObject) = {
-      val collection = dbo.get(s"${j.owner.collection}_${j.joined.collection}__${j.joined.fieldName}").asInstanceOf[BasicDBList].toArray.toList
+      val collection = dbo.get(s"${j.owner.collection}_${j.joined.collection}__${j.joined.entityName}").asInstanceOf[BasicDBList].toArray.toList
       j match {
         case y: joinOne =>
           collection.headOption.map(y.joined.collection.fromDBObject(_))
@@ -102,7 +102,7 @@ object MongoBuilder {
         .append("from", join.joined.collection.toString)
         .append("localField", join.owner.toString)
         .append("foreignField", join.joined.toString)
-        .append("as", s"${join.owner.collection}_${join.joined.collection}__${join.joined.fieldName}").get()).get()
+        .append("as", s"${join.owner.collection}_${join.joined.collection}__${join.joined.entityName}").get()).get()
     }
   }
 

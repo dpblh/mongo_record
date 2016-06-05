@@ -9,13 +9,24 @@ import scala.reflect.runtime.universe._
 trait Make[C] {
   def asDBObject(c: Any):Any
   def fromDBObject(dbo: Any):Any
+
+  val originName:String
+  val entityName:String
+
+  //TODO concurrency variable
+  var fields:Map[String, Make[_]] = null
+  def getField(field: String):Make[_] = {
+    if (fields == null) {
+      fields = ReflectionRecord.getMetaFields(getClass)
+    }
+    fields(field)
+  }
+
 }
 
-abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
+abstract class MetaTag[C: TypeTag] extends Make[C] {
 
   type it = this.type
-
-  val collection_name:String
 
   def isValid(c: C):Boolean = true
 
@@ -30,14 +41,15 @@ abstract class MetaTag[C: TypeTag] extends Make[C] with BaseFields {
 
   def dynamic[F: TypeTag](field: String)  =  RuntimeField[C, F](field, this)
 
-  override def toString = collection_name
+  override def toString = entityName
 
-  def asDBObject(c: Any):Any              =  DBObjectSerializer.asDBObject(c, runtimeClass)
-  def fromDBObject(dbo: Any):C            =  DBObjectSerializer.fromDBObject(dbo, runtimeClass).asInstanceOf[C]
+  def asDBObject(c: Any):Any              =  DBObjectSerializer.asDBObject(c, runtimeClass, Some(this))
+  def fromDBObject(dbo: Any):C            =  DBObjectSerializer.fromDBObject(dbo, runtimeClass, Some(this)).asInstanceOf[C]
   def runtimeClass: Type                  =  typeOf[C]
 
 }
 
 abstract class ObjectMetaTag[C: TypeTag] extends MetaTag[C] {
-  override val collection_name:String = ReflectionRecord.getNameAsUnderscores(getClass)
+  override val originName:String = ReflectionRecord.getName(getClass)
+  override val entityName:String = ReflectionRecord.camelToUnderscores(originName)
 }

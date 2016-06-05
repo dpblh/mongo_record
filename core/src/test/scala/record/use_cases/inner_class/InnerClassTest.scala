@@ -33,7 +33,7 @@ class InnerClassTest extends Spec with MongoRecord {
         p.personData.firstName === "tim" &&
         p.personData.address.street === "Tver"
     ) select p
-  }, """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "personData.firstName" : "tim"}]} , { "personData.address.street" : "Tver"}]})""")
+  }, """db.person.find({ "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.first_name" : "tim"}]} , { "person_data.address.street" : "Tver"}]})""")
 
 
   yes(from(person) { p =>
@@ -42,7 +42,7 @@ class InnerClassTest extends Spec with MongoRecord {
         p.personData.firstName === "tim" &&
         p.personData.address.street === "Tver" &&
         p.personData.address === Address("Tver")
-    ) select p}, """db.person.find({ "$and" : [ { "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "personData.firstName" : "tim"}]} , { "personData.address.street" : "Tver"}]} , { "personData.address" : { "street" : "Tver"}}]})""")
+    ) select p}, """db.person.find({ "$and" : [ { "$and" : [ { "$and" : [ { "email" : "bajurovt@gmail.com"} , { "person_data.first_name" : "tim"}]} , { "person_data.address.street" : "Tver"}]} , { "person_data.address" : { "street" : "Tver"}}]})""")
 
 
 }

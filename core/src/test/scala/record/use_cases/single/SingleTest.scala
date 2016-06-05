@@ -9,7 +9,6 @@ case class Person(id: String, name: String, fio: String, age: Int)
 
 object Person extends Meta[Person] {
 
-  override val collection_name: String = "person"
   override def isValid(c: Person): Boolean = c.name.nonEmpty && c.age > 18
   object id extends StringField(this)
   object name extends StringField(this)

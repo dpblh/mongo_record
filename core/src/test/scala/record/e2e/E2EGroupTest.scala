@@ -10,18 +10,15 @@ case class Address2(id: String, street: String)
 case class PersonalData(person_id: String, firstName: String, lastName: String)
 object Patient extends MongoRecord {
   object patient extends Meta[Patient] {
-    override val collection_name: String = "patient"
     object id extends StringField(this)
     object snils extends IntField(this)
     object address_id extends StringField(this)
   }
   object address extends Meta[Address2] {
-    override val collection_name: String = "address"
     object id extends StringField(this)
     object street extends StringField(this)
   }
   object personalData extends Meta[PersonalData] {
-    override val collection_name: String = "personal_data"
     object person_id extends StringField(this)
     object firstName extends IntField(this)
     object lastName extends IntField(this)

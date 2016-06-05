@@ -16,7 +16,7 @@ object PersonToken extends MongoRecord {
   }
 
   object PersonService extends Meta[Person] {
-    override val collection_name: String = "person"
+    override val entityName: String = "person"
     object id extends StringField(this)
     object name extends StringField(this)
     object age extends IntField(this)

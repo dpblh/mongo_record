@@ -1,5 +1,6 @@
 package record
 
+import scala.reflect.runtime.universe._
 /**
  * Created by tim on 01.06.16.
  */
@@ -15,5 +16,18 @@ object ReflectionRecord {
   def getNameAsUnderscores(clazz: Class[_]):String = camelToUnderscores(getName(clazz))
 
   def camelToUnderscores(name: String) = name.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z\\d])([A-Z])", "$1_$2").toLowerCase
+
+  def getMetaFields(clazz: Class[_]):Map[String, Make[_]] = {
+    val mirror = runtimeMirror(getClass.getClassLoader)
+
+    mirror
+      .classSymbol(clazz)
+      .toType
+      .members
+      .filter(_.isModule)
+      .map { m => mirror.reflectModule(m.asModule).instance.asInstanceOf[Make[_]] }
+      .map { d => (d.originName, d) }
+      .toMap
+  }
 
 }

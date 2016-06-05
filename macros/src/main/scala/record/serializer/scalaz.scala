@@ -2,8 +2,8 @@ package record.serializer
 
 import java.util.{Calendar, Date}
 
-import com.mongodb.{BasicDBObject, BasicDBList}
-import record.UtilsRecord
+import com.mongodb.{BasicDBList, BasicDBObject}
+import record.{UtilsRecord, _}
 import record.serializer.DBObjectSerializer._
 
 import scala.collection.JavaConversions._
@@ -50,14 +50,14 @@ object scalaz {
       case x if tup <:< typeOf[Seq[_]]    => dbo.toList
       case x => throw DBObjectSerializerException("Unsupported collection type %s".format(tup.toString))
     }
-    collection.map( o => fromDBObject(o, tup.typeArgs.head))
+    collection.map( o => fromDBObject(o, tup.typeArgs.head, None))
   }
 
   def isOption(tup: Type): Boolean = tup <:< typeOf[Option[Any]]
 
   def asOption(tup: Type, o: Any):Any = o match {
     case null     =>  None
-    case x        =>  Some(fromDBObject(x, tup.typeArgs.head))
+    case x        =>  Some(fromDBObject(x, tup.typeArgs.head, None))
   }
 
   def isMap(tup: Type):Boolean = tup <:< typeOf[Map[String,_]]
@@ -67,16 +67,21 @@ object scalaz {
       case m: MethodSymbol if m.isCaseAccessor => m.name.toString
     }.nonEmpty
   }
-  def asClass(tup: Type, y: BasicDBObject):Any = {
+  def asClass(tup: Type, y: BasicDBObject, meta: Option[Mk]):Any = {
     val rm = runtimeMirror(getClass.getClassLoader)
     val classTest = tup.typeSymbol.asClass
     val classMirror = rm.reflectClass(classTest)
     val constructor = tup.decl(termNames.CONSTRUCTOR).asMethod
     val constructorMirror = classMirror.reflectConstructor(constructor)
     val constructorArgs = constructor.paramLists.flatten.map { param =>
-      val name = param.name.toString
-      val value = y.get(name)
-      fromDBObject(value, param.typeSignature)
+      val (entityName, entity) = meta match {
+        case Some(x) =>
+          val metaField = x.getField(param.name.toString)
+          (metaField.entityName, Some(metaField))
+        case None => (param.name.toString, None)
+      }
+      val value = y.get(entityName)
+      fromDBObject(value, param.typeSignature, entity)
     }
     constructorMirror(constructorArgs: _*)
   }
