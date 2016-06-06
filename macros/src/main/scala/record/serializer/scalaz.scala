@@ -42,7 +42,7 @@ object scalaz {
 
   def isCollection(tup: Type):Boolean = tup <:< typeOf[Iterable[_]]
 
-  def asCollection(tup: Type, o: Any):Any = {
+  def asCollection(tup: Type, o: Any, meta: Option[Mk]):Any = {
     val dbo = o.asInstanceOf[BasicDBList]
     val collection = tup match {
       case x if tup <:< typeOf[List[_]]   => dbo.toList
@@ -50,14 +50,14 @@ object scalaz {
       case x if tup <:< typeOf[Seq[_]]    => dbo.toList
       case x => throw DBObjectSerializerException("Unsupported collection type %s".format(tup.toString))
     }
-    collection.map( o => fromDBObject(o, tup.typeArgs.head, None))
+    collection.map( o => fromDBObject(o, tup.typeArgs.head, meta))
   }
 
   def isOption(tup: Type): Boolean = tup <:< typeOf[Option[Any]]
 
-  def asOption(tup: Type, o: Any):Any = o match {
+  def asOption(tup: Type, o: Any, meta: Option[Mk]):Any = o match {
     case null     =>  None
-    case x        =>  Some(fromDBObject(x, tup.typeArgs.head, None))
+    case x        =>  Some(fromDBObject(x, tup.typeArgs.head, meta))
   }
 
   def isMap(tup: Type):Boolean = tup <:< typeOf[Map[String,_]]

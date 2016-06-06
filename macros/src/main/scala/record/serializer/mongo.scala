@@ -23,15 +23,15 @@ object mongo {
     case x: Calendar      => x.getTimeInMillis
   }
 
-  def asOption(o: Any, tup: Type):Any = o match {
-    case Some(x)   => asDBObject(x, tup.typeArgs.head, None)
+  def asOption(o: Any, tup: Type, meta: Option[Mk]):Any = o match {
+    case Some(x)   => asDBObject(x, tup.typeArgs.head, meta)
     case None      => null
   }
 
-  def asCollection(o: Any, tup: Type):Any = {
+  def asCollection(o: Any, tup: Type, meta: Option[Mk]):Any = {
     val list = new BasicDBList()
     o.asInstanceOf[Iterable[_]].foreach { element =>
-      list.add(asDBObject(element, tup.typeArgs.head, None).asInstanceOf[AnyRef])//TODO AnyRef ?
+      list.add(asDBObject(element, tup.typeArgs.head, meta).asInstanceOf[AnyRef])//TODO AnyRef ?
     }
     list
   }

@@ -19,7 +19,7 @@ trait Make[C] {
     if (fields == null) {
       fields = ReflectionRecord.getMetaFields(getClass)
     }
-    fields(field)
+    fields.getOrElse(field, RuntimeField(field, this))
   }
 
 }

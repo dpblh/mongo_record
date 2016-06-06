@@ -16,8 +16,8 @@ object DBObjectSerializer {
   def fromDBObject(value: Any, tpe: Type, meta: Option[Mk]):Any = tpe match {
     case x if scalaz.isSimpleType(x)    => scalaz.asSimpleType(value, x)
     case x if scalaz.isDate(x)          => scalaz.asDate(x, value)
-    case x if scalaz.isOption(x)        => scalaz.asOption(x, value)
-    case x if scalaz.isCollection(x)    => scalaz.asCollection(x, value)
+    case x if scalaz.isOption(x)        => scalaz.asOption(x, value, meta)
+    case x if scalaz.isCollection(x)    => scalaz.asCollection(x, value, meta)
     case x =>
       value match {
         case y: BasicDBObject           => scalaz.asClass(x, y, meta)
@@ -29,9 +29,9 @@ object DBObjectSerializer {
   def asDBObject[T](value: T, tup: Type, meta: Option[Mk]):Any = tup match {
     case x if scalaz.isSimpleType(x)  => mongo.asSimpleType(value)
     case x if scalaz.isDate(x)        => mongo.asDate(value)
-    case x if scalaz.isOption(x)      => mongo.asOption(value, x)
+    case x if scalaz.isOption(x)      => mongo.asOption(value, x, meta)
     case x if scalaz.isMap(x)         => mongo.asMap(value, x)
-    case x if scalaz.isCollection(x)  => mongo.asCollection(value, x)
+    case x if scalaz.isCollection(x)  => mongo.asCollection(value, x, meta)
     case x if scalaz.isCase(x)        => mongo.asCase(value, x, meta)
     case x                            => throw DBObjectSerializerException("Unsupported type %s %s".format(x, value))
   }

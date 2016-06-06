@@ -24,8 +24,16 @@ object Fields extends Meta[Fields] {
   object f_bid_decimal extends BigDecimalField(this)
   object f_date extends DateField(this)
   object f_calendar extends CalendarField(this)
-  object f_option extends OptionField[Fields, Point](this)
-  object f_list extends InnerField[Fields, List[Point]](this)
+  object f_option extends OptionField[Fields, Point](this) {
+    object x extends IntField(this)
+    object y extends IntField(this)
+  }
+  object f_list extends InnerField[Fields, List[Point]](this) {
+    object x extends IntField(this) {
+      override val entityName: String = "xxx"
+    }
+    object y extends IntField(this)
+  }
 
 }
 
