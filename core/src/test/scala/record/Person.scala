@@ -1,6 +1,5 @@
 package record
 
-import MongoRecord._
 import scala.language.postfixOps
 
 /**

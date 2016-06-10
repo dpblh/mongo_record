@@ -1,8 +1,8 @@
 package record
 
+import record.macroses.serializer.DBObjectSerializer
 import record.signatures._
 
-import scala.reflect.macros.whitebox.Context
 import scala.language.experimental.macros
 
 /**
@@ -18,29 +18,6 @@ trait MongoRecord
 
   type Meta[C] = ObjectMetaTag[C]
 
-  def meta[T]: MetaTag[T] = macro MongoRecord.metaImpl[T]
-
-}
-
-object MongoRecord extends UtilsMacro {
-
-  def metaImpl[T: c.WeakTypeTag](c: Context) = {
-    import c.universe._
-
-    val tpe = weakTypeOf[T]
-
-    val collection_name = camelToUnderscores(tpe.typeSymbol.name.toString)
-
-    val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
-      val (name, typ) = p
-      buildFieldObject(c)(tpe, name, typ)
-    }.toList
-
-    q"""new Meta[$tpe] {
-        val collection_name = $collection_name
-       ..$fields
-       }"""
-
-  }
+  def meta[T]: MetaTag[T] = macro DBObjectSerializer.metaGenerator[T]
 
 }
