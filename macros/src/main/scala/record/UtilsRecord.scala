@@ -9,4 +9,9 @@ object UtilsRecord {
     date.setTimeInMillis(milis)
     date
   }
+  def timeWork(f: => Unit):Unit = {
+    val start_t = System.currentTimeMillis()
+    f
+    println(System.currentTimeMillis() - start_t)
+  }
 }

@@ -29,11 +29,11 @@ object mongo {
 
   def asCollection(c: Context)(tpe: c.universe.Type, name: c.Tree) = {
     import c.universe._
-    //TODO
+    val elementSerializer = asDBObject(c)(tpe.typeArgs.head, q"element")
     q"""{
-        val list = new BasicDBList()
+        val list = new com.mongodb.BasicDBList()
           $name.foreach { element =>
-            list.add(record.serializer.DBObjectSerializer.asDBObject[${tpe.typeArgs.head}](element))
+            list.add($elementSerializer)
           }
        list
        }
@@ -48,7 +48,7 @@ object mongo {
         val builder = com.mongodb.BasicDBObjectBuilder.start()
         $name.foreach { t =>
           val (key, _) = t
-          val value = record.serializer.DBObjectSerializer.asDBObject[$tpe](t._2)
+          val value = record.serializer.DBObjectSerializer.asDBObject[${tpe.typeArgs(1)}](t._2)
           builder.append(key, value)
         }
         builder.get()
@@ -59,8 +59,8 @@ object mongo {
   def asOption(c: Context)(tpe: c.universe.Type, name: c.Tree) = {
     import c.universe._
     q"""
-       name match {
-        case Some(x) => ${asDBObject(c)(tpe.typeArgs.head, name)}
+       $name match {
+        case Some(x) => ${asDBObject(c)(tpe.typeArgs.head, q"x")}
         case None => null
        }
      """
@@ -77,8 +77,9 @@ object mongo {
   def asSimpleType(c: Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
     import c.universe._
     tpe.typeSymbol.name.toString match {
-      case "Int" => q"$name"
-      case "String" => q"$name"
+      case "BigInt" => q"$name.toString"
+      case "BigDecimal" => q"$name.toString"
+      case _ => q"$name"
     }
   }
 

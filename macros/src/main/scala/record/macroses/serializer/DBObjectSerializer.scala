@@ -8,11 +8,12 @@ import scala.reflect.macros.whitebox.Context
  */
 object DBObjectSerializer {
 
+  case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
+
   import record.ReflectionRecord._
 
   trait Reader[T] {
-    def asString(c: T):String
-    def asDBObject(c: T):com.mongodb.DBObject
+    def asDBObject(c: T):Any
   }
 
   def DBOGenerator[T]: Reader[T] = macro DBOGeneratorImpl[T]
@@ -22,8 +23,7 @@ object DBObjectSerializer {
     val tpe = weakTypeOf[T]
     q"""
        new Reader[$tpe] {
-          def asDBObject(c: $tpe):com.mongodb.DBObject = ${asDBObject(c)(tpe, q"c")}
-          def asString(c: $tpe):String = asDBObject(c).toString
+          def asDBObject(c: $tpe):Any = ${asDBObject(c)(tpe, q"c")}
        }
      """
   }
@@ -50,12 +50,13 @@ object DBObjectSerializer {
   def asDBObject(c: Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
     import c.universe._
     tpe match {
-      case x if scalaz.isSimpleType(c)(tpe) => q"${mongo.asSimpleType(c)(tpe, name)}"
-      case x if scalaz.isDate(c)(tpe) => q"${mongo.asDate(c)(tpe, name)}"
-      case x if scalaz.isOption(c)(tpe) => q"${mongo.asOption(c)(tpe, name)}"
-      case x if scalaz.isMap(c)(tpe) => q"${mongo.asMap(c)(tpe, name)}"
-      case x if scalaz.isCollection(c)(tpe) => q"${mongo.asCollection(c)(tpe, name)}"
-      case x => q"${mongo.asCase(c)(tpe, name)}"
+      case x if scalaz.isSimpleType(c)(tpe)       => q"${mongo.asSimpleType(c)(tpe, name)}"
+      case x if scalaz.isDate(c)(tpe)             => q"${mongo.asDate(c)(tpe, name)}"
+      case x if scalaz.isOption(c)(tpe)           => q"${mongo.asOption(c)(tpe, name)}"
+      case x if scalaz.isMap(c)(tpe)              => q"${mongo.asMap(c)(tpe, name)}"
+      case x if scalaz.isCollection(c)(tpe)       => q"${mongo.asCollection(c)(tpe, name)}"
+      case x if scalaz.isCase(c)(tpe)             => q"${mongo.asCase(c)(tpe, name)}"
+      case x                                      => throw DBObjectSerializerException("Unsupported type %s".format(x))
     }
   }
 
