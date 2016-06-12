@@ -1,32 +1,13 @@
-package record.macroses.serializer
+package record.macroz.serializer
 
-import scala.language.experimental.macros
+import record.ReflectionRecord._
+
 import scala.reflect.macros.whitebox.Context
 
 /**
- * Created by tim on 10.06.16.
+ * Created by tim on 12.06.16.
  */
-object DBObjectSerializer {
-
-  case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
-
-  import record.ReflectionRecord._
-
-  trait Reader[T] {
-    def asDBObject(c: T):Any
-  }
-
-  def DBOGenerator[T]: Reader[T] = macro DBOGeneratorImpl[T]
-
-  def DBOGeneratorImpl[T: c.WeakTypeTag](c: Context) = {
-    import c.universe._
-    val tpe = weakTypeOf[T]
-    q"""
-       new Reader[$tpe] {
-          def asDBObject(c: $tpe):Any = ${asDBObject(c)(tpe, q"c")}
-       }
-     """
-  }
+object SerializerUtils {
 
   def getFieldNamesAndTypes(c: Context)(tpe: c.universe.Type):
   Iterable[(c.universe.TermName, c.universe.Type)] = {
@@ -44,19 +25,6 @@ object DBObjectSerializer {
     tpe.decls.collect {
       case CaseField(nme, tpe) =>
         (nme, tpe)
-    }
-  }
-
-  def asDBObject(c: Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
-    import c.universe._
-    tpe match {
-      case x if scalaz.isSimpleType(c)(tpe)       => q"${mongo.asSimpleType(c)(tpe, name)}"
-      case x if scalaz.isDate(c)(tpe)             => q"${mongo.asDate(c)(tpe, name)}"
-      case x if scalaz.isOption(c)(tpe)           => q"${mongo.asOption(c)(tpe, name)}"
-      case x if scalaz.isMap(c)(tpe)              => q"${mongo.asMap(c)(tpe, name)}"
-      case x if scalaz.isCollection(c)(tpe)       => q"${mongo.asCollection(c)(tpe, name)}"
-      case x if scalaz.isCase(c)(tpe)             => q"${mongo.asCase(c)(tpe, name)}"
-      case x                                      => throw DBObjectSerializerException("Unsupported type %s".format(x))
     }
   }
 
@@ -91,7 +59,7 @@ object DBObjectSerializer {
       fieldGenerator(c)(tpe, name, typ)
     }.toList
 
-    val asBDObjectBody = asDBObject(c)(tpe, q"root")
+    val asBDObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
 
     q"""new Meta[$tpe] { self =>
         val collection_name = $collection_name

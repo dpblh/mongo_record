@@ -1,6 +1,6 @@
 package record
 
-import record.serializer.DBObjectSerializer
+import record.runtime.serializer.DBObjectSerializer
 import record.signatures._
 import scala.reflect.runtime.universe._
 /**

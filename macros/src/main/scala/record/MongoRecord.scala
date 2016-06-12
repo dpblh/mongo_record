@@ -1,6 +1,6 @@
 package record
 
-import record.macroses.serializer.DBObjectSerializer
+import record.macroz.serializer.DBObjectSerializer
 import record.signatures._
 
 import scala.language.experimental.macros
@@ -18,6 +18,6 @@ trait MongoRecord
 
   type Meta[C] = ObjectMetaTag[C]
 
-  def meta[T]: MetaTag[T] = macro DBObjectSerializer.metaGenerator[T]
+  def meta[T]: MetaTag[T] = macro DBObjectSerializer.asDBObjectImpl[T]
 
 }

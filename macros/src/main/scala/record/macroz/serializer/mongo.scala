@@ -1,4 +1,7 @@
-package record.macroses.serializer
+package record.macroz.serializer
+
+import record.macroz.serializer.DBObjectSerializer._
+import record.macroz.serializer.SerializerUtils._
 
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox.Context
@@ -7,8 +10,6 @@ import scala.reflect.macros.whitebox.Context
  * Created by tim on 10.06.16.
  */
 object mongo {
-
-  import DBObjectSerializer._
 
   def asCase(c: Context)(tpe: c.universe.Type, root: c.Tree): c.Tree = {
     import c.universe._
@@ -42,13 +43,12 @@ object mongo {
 
   def asMap(c: Context)(tpe: c.universe.Type, name: c.Tree) = {
     import c.universe._
-
     q"""
        {
         val builder = com.mongodb.BasicDBObjectBuilder.start()
         $name.foreach { t =>
           val (key, _) = t
-          val value = record.serializer.DBObjectSerializer.asDBObject[${tpe.typeArgs(1)}](t._2)
+          val value = record.runtime.serializer.DBObjectSerializer.asDBObject[${tpe.typeArgs(1)}](t._2)
           builder.append(key, value)
         }
         builder.get()

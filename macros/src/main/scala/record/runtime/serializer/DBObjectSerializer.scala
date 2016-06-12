@@ -1,4 +1,4 @@
-package record.serializer
+package record.runtime.serializer
 
 import com.mongodb._
 import record._
