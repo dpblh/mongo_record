@@ -21,7 +21,6 @@ object scalaz {
     case x if x =:= typeOf[Byte]              => o.toString.toByte
     case x if x =:= typeOf[BigDecimal]        => BigDecimal(o.toString)
     case x if x =:= typeOf[BigInt]            => BigInt(o.toString)
-    case x: CharSequence                      => x.toString
     //Long, String, Double, Boolean, Array[Byte]
     case _                                    => o
   }
