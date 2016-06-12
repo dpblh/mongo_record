@@ -18,11 +18,8 @@ object DBObjectSerializer {
     case x if scalaz.isDate(x)          => scalaz.asDate(x, value)
     case x if scalaz.isOption(x)        => scalaz.asOption(x, value, meta)
     case x if scalaz.isCollection(x)    => scalaz.asCollection(x, value, meta)
-    case x =>
-      value match {
-        case y: BasicDBObject           => scalaz.asClass(x, y, meta)
-        case _                          => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: value $value")
-      }
+    case x if scalaz.isCase(x)          => scalaz.asClass(x, value.asInstanceOf[BasicDBObject], meta)
+    case x                              => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: value $value")
   }
 
   def asDBObject[A: TypeTag](entity: A, meta: Option[Mk] = None):Any = asDBObject(entity, typeOf[A], meta)
