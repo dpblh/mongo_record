@@ -1,8 +1,7 @@
-package record.serializer.macroz
+package record.serializer.runtime
 
-import scala.language.experimental.macros
 import record.Spec
-import record.macroz.serializer.DBObjectSerializer._
+import record.runtime.serializer.DBObjectSerializer._
 import com.mongodb.util.JSON._
 
 /**
@@ -11,7 +10,7 @@ import com.mongodb.util.JSON._
 case class IntroPoint(x: Point, y: Point)
 class DeserializeTest extends Spec {
 
-  def fromDBObject[T]: Any => T = macro fromDBObjectImpl[T]
+//  def fromDBObject[T]: Any => T = macro fromDBObjectImpl[T]
 
   fromDBObject[Int](parse("123")) shouldBe 123
   fromDBObject[String](parse( """ "string" """)) shouldBe "string"

@@ -13,7 +13,7 @@ case class Person(name: String, age: Int, address: Address)
 
 case class Point(x: Int, y: Int)
 
-case class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long, f_string: String, f_float: Float, f_byte: Byte, f_byte_array: Array[Byte], f_big_int: BigInt, f_bid_decimal: BigDecimal, f_date: java.util.Date, f_calendar: java.util.Calendar, f_option: Option[Point], f_list: List[Point])
+case class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long, f_string: String, f_float: Float, f_byte: Byte, f_big_int: BigInt, f_bid_decimal: BigDecimal, f_date: java.util.Date, f_calendar: java.util.Calendar, f_option: Option[Point], f_list: List[Point])
 
 class SerializerTest extends Spec {
 
@@ -53,7 +53,6 @@ class SerializerTest extends Spec {
       "string",
       1f,
       1.toByte,
-      Array(1.toByte),
       BigInt(1000),
       BigDecimal(100),
       current_date,
@@ -61,6 +60,6 @@ class SerializerTest extends Spec {
       Some(Point(0, 0)),
       Point(0, 0) :: Nil
     )
-  ).toString, s"""{ "f_double" : 1.1 , "f_boolean" : true , "f_int" : 1 , "f_long" : 1 , "f_string" : "string" , "f_float" : 1.0 , "f_byte" : 1 , "f_byte_array" : <Binary Data> , "f_big_int" : "1000" , "f_bid_decimal" : "100" , "f_date" : ${current_date.getTime} , "f_calendar" : ${current_calendar.getTimeInMillis} , "f_option" : { "x" : 0 , "y" : 0} , "f_list" : [ { "x" : 0 , "y" : 0}]}""")
+  ).toString, s"""{ "f_double" : 1.1 , "f_boolean" : true , "f_int" : 1 , "f_long" : 1 , "f_string" : "string" , "f_float" : 1.0 , "f_byte" : 1 , "f_big_int" : "1000" , "f_bid_decimal" : "100" , "f_date" : ${current_date.getTime} , "f_calendar" : ${current_calendar.getTimeInMillis} , "f_option" : { "x" : 0 , "y" : 0} , "f_list" : [ { "x" : 0 , "y" : 0}]}""")
 
 }

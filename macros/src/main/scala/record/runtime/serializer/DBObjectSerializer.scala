@@ -12,11 +12,12 @@ object DBObjectSerializer {
 
   case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
 
-  def fromDBObject[T: TypeTag](m: DBObject, meta: Option[Mk] = None):Any = fromDBObject(m, typeOf[T], meta)
+  def fromDBObject[T: TypeTag](m: Any, meta: Option[Mk] = None):Any = fromDBObject(m, typeOf[T], meta)
   def fromDBObject(value: Any, tpe: Type, meta: Option[Mk]):Any = tpe match {
     case x if scalaz.isSimpleType(x)    => scalaz.asSimpleType(value, x)
     case x if scalaz.isDate(x)          => scalaz.asDate(x, value)
     case x if scalaz.isOption(x)        => scalaz.asOption(x, value, meta)
+    case x if scalaz.isMap(x)           => scalaz.asMap(x, value)
     case x if scalaz.isCollection(x)    => scalaz.asCollection(x, value, meta)
     case x if scalaz.isCase(x)          => scalaz.asClass(x, value.asInstanceOf[BasicDBObject], meta)
     case x                              => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}: value $value")

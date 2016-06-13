@@ -17,7 +17,11 @@ object scalaz {
 
   def isMap(c: Context)(tpe: c.universe.Type): Boolean = {
     tpe match {
-      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.Map" => true
+      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.Map" =>
+        if (x.typeArgs.head.typeSymbol.fullName.toString == "java.lang.String")
+          true
+        else
+          throw DBObjectSerializerException("Unsupported Map key type %s".format(x.typeArgs.head.typeSymbol.fullName.toString))
       case _ => false
     }
   }
@@ -47,15 +51,22 @@ object scalaz {
       case x if x.typeSymbol.fullName.toString == "scala.Byte"            => q"$name.toString.toByte"
       case x if x.typeSymbol.fullName.toString == "scala.math.BigDecimal" => q"BigDecimal($name.toString)"
       case x if x.typeSymbol.fullName.toString == "scala.math.BigInt"     => q"BigInt($name.toString)"
-      case _ => name
+      //TODO parse fix
+      case x if x.typeSymbol.fullName.toString == "scala.Long"            =>
+        q"""$name.asInstanceOf[Any] match {
+            case x: Long => x
+            case x => x.toString.toLong
+           }"""
+      case _ => q"$name.asInstanceOf[$tpe]"
     }
   }
   def asDate(c: Context)(tpe: c.universe.Type, name: c.Tree):c.Tree = {
     import c.universe._
     val milis = q"""
-         $name match {
+         $name.asInstanceOf[Any] match {
           case x: BigDecimal  => x.longValue()
           case x: Double      => x.toLong
+          case x: Long        => x
           case x              => x.toString.toLong
          }
      """
@@ -76,9 +87,9 @@ object scalaz {
   def asCollection(c: Context)(tpe: c.universe.Type, name: c.Tree):c.Tree = {
     import c.universe._
     val collection = tpe match {
-      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.List"   => q"$name.toList"
-      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.Set"    => q"$name.toSet"
-      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.Seq"    => q"$name.toSeq"
+      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.List"   => q"scala.collection.JavaConversions.iterableAsScalaIterable($name.asInstanceOf[com.mongodb.BasicDBList]).to[List]"
+      case x if x.typeSymbol.fullName.toString == "scala.collection.immutable.Set"    => q"scala.collection.JavaConversions.iterableAsScalaIterable($name.asInstanceOf[com.mongodb.BasicDBList]).to[Set]"
+      case x if x.typeSymbol.fullName.toString == "scala.collection.Seq"              => q"scala.collection.JavaConversions.iterableAsScalaIterable($name.asInstanceOf[com.mongodb.BasicDBList]).to[Seq]"
       case x                                                                          => throw DBObjectSerializerException("Unsupported collection type %s".format(x.typeSymbol.fullName.toString))
     }
     q"$collection.map { element => ${fromDBObject(c)(tpe.typeArgs.head, q"element")} }"
@@ -89,9 +100,18 @@ object scalaz {
 
     val caseParams = getFieldNamesAndTypes(c)(tpe) map { tupl =>
       val (name, returnType) = tupl
-      q"""$root.asInstanceOf[com.mongodb.BasicDBObject].get(${name.decoded}).asInstanceOf[$returnType]"""
+      q"${fromDBObject(c)(returnType, q"$root.asInstanceOf[com.mongodb.BasicDBObject].get(${name.decoded})")}.asInstanceOf[$returnType]"
     }
     q"$companion(..$caseParams)"
+  }
+
+  def asMap(c: Context)(tpe: c.universe.Type, root: c.Tree):c.Tree = {
+    import c.universe._
+
+    val valueType = tpe.typeArgs(1)
+    val value = fromDBObject(c)(valueType, q"tupl._2")
+
+    q"scala.collection.JavaConversions.mapAsScalaMap($root.asInstanceOf[com.mongodb.BasicDBObject]).map( tupl => (tupl._1 -> $value.asInstanceOf[$valueType])).toMap[String, $valueType]"
   }
 
   val simpleType = Set("scala.Int", "java.lang.String", "scala.Long", "scala.Double", "scala.Float", "scala.Byte", "scala.math.BigInt", "scala.math.BigDecimal", "scala.Boolean")

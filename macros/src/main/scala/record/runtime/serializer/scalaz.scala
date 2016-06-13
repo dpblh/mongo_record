@@ -61,6 +61,13 @@ object scalaz {
 
   def isMap(tup: Type):Boolean = tup <:< typeOf[Map[String,_]]
 
+  def asMap(tup: Type, o: Any):Any = {
+    val dbo = o.asInstanceOf[BasicDBObject]
+    dbo.map { e =>
+      e._1 -> fromDBObject(e._2, tup.typeArgs(1), None)
+    }.toMap[String, Any]
+  }
+
   def isCase(tup: Type):Boolean = {
     tup.decls.collect {
       case m: MethodSymbol if m.isCaseAccessor => m.name.toString

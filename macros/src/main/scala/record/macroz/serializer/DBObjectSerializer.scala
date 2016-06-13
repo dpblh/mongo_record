@@ -16,6 +16,7 @@ object DBObjectSerializer {
       case x if scalaz.isSimpleType(c)(x)     => q"${scalaz.asSimpleType(c)(x, name)}"
       case x if scalaz.isDate(c)(x)           => q"${scalaz.asDate(c)(x, name)}"
       case x if scalaz.isOption(c)(x)         => q"${scalaz.asOption(c)(x, name)}"
+      case x if scalaz.isMap(c)(tpe)          => q"${scalaz.asMap(c)(tpe, name)}"
       case x if scalaz.isCollection(c)(x)     => q"${scalaz.asCollection(c)(x, name)}"
       case x if scalaz.isCase(c)(x)           => q"${scalaz.asClass(c)(x, name)}"
       case x                                  => throw DBObjectSerializerException(s"Error deserialize from ${tpe.typeSymbol.toString}")
@@ -44,7 +45,7 @@ object DBObjectSerializer {
   def fromDBObjectImpl[T: c.WeakTypeTag](c: Context) = {
     import c.universe._
     val tpe = weakTypeOf[T]
-    q"(c: Any) => ${fromDBObject(c)(tpe, q"c")}"
+    q"(c: Any) => ${fromDBObject(c)(tpe, q"c")}.asInstanceOf[$tpe]"
   }
 
 }
