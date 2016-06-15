@@ -1,4 +1,4 @@
-package record.e2e
+package record.mocroz
 
 import record.Spec
 import record.imports._
@@ -11,17 +11,9 @@ case class Person(name: String, age: Int, address: Address) {
   def save = Person.insert(this).flash
 }
 
-object Person extends Meta[Person] {
 
-  override val entityName: String = "person_no_conflict"
-
-  object name extends StringField(this)
-  object age extends IntField(this)
-  object address extends InnerField[Person, Address](this) {
-    object region extends StringField(this)
-    object city extends StringField(this)
-  }
-
+object Person extends SingleRecord {
+  def mt = meta[Person]
 }
 
 class E2ETest extends Spec {
@@ -135,6 +127,5 @@ class E2ETest extends Spec {
   }.remove
 
   Person.where.count shouldBe 1
-
 
 }

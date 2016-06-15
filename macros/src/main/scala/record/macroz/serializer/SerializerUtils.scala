@@ -36,10 +36,17 @@ object SerializerUtils {
       fieldGenerator(c)(parentTpe, name, typ)
     }.toList
 
-    q"""object ${TermName(name.encoded)} extends record.Field[$parentTpe, $tpe] {
-          override val collection: record.Make[$parentTpe] = self
-          override def fromDBObject(dbo: Any): Any = ???
-          override def asDBObject(c: Any): Any = ???
+    val asDBObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
+    val fromBDObjectBody = DBObjectSerializer.fromDBObject(c)(tpe, q"c")
+
+    q"""object ${TermName(name.encoded)} extends record.MacroField[$parentTpe, $tpe](this) {
+          override def fromDBObject(c: Any): Any = {
+            $fromBDObjectBody
+          }
+          override def asDBObject(c: Any): Any = {
+            val root = c.asInstanceOf[$tpe]
+            $asDBObjectBody
+          }
           override val originName: String = ${name.encoded}
           override val entityName: String = ${camelToUnderscores(name.encoded)}
        ..$fields
@@ -52,7 +59,8 @@ object SerializerUtils {
 
     val tpe = weakTypeOf[T]
 
-    val collection_name = camelToUnderscores(tpe.typeSymbol.name.toString)
+    val originName = tpe.typeSymbol.name.encoded
+    val entityName = camelToUnderscores(originName)
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (name, typ) = p
@@ -60,13 +68,18 @@ object SerializerUtils {
     }.toList
 
     val asBDObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
+    val fromBDObjectBody = DBObjectSerializer.fromDBObject(c)(tpe, q"c")
 
-    q"""new Meta[$tpe] { self =>
-        val collection_name = $collection_name
+    q"""new record.MetaTag[$tpe] {
         override def asDBObject(c: Any):Any =  {
           val root = c.asInstanceOf[$tpe]
           $asBDObjectBody
         }
+        override def fromDBObject(c: Any):$tpe = {
+          $fromBDObjectBody
+        }
+        override val entityName:String = $entityName
+        override val originName:String = $originName
        ..$fields
        }"""
 

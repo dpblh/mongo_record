@@ -1,4 +1,4 @@
-package record.fields
+package record.mocroz.fields
 
 import record.imports._
 import record.Spec
@@ -10,33 +10,8 @@ case class Point(x: Int, y: Int)
 case class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long, f_string: String, f_float: Float,  f_byte: Byte,  f_byte_array: Array[Byte],  f_big_int: BigInt, f_bid_decimal: BigDecimal, f_date: java.util.Date, f_calendar: java.util.Calendar, f_option: Option[Point], f_list: List[Point]) {
   def save(): Unit = Fields.insert(this).flash
 }
-object Fields extends Meta[Fields] {
-
-  override val entityName: String = "fields_no_conflict"
-
-  object f_double extends DoubleField(this)
-  object f_boolean extends BooleanField(this)
-  object f_int extends IntField(this)
-  object f_long extends LongField(this)
-  object f_string extends StringField(this)
-  object f_float extends FloatField(this)
-  object f_byte extends ByteField(this)
-  object f_byte_array extends ByteArrayField(this)
-  object f_big_int extends BigIntField(this)
-  object f_bid_decimal extends BigDecimalField(this)
-  object f_date extends DateField(this)
-  object f_calendar extends CalendarField(this)
-  object f_option extends OptionField[Fields, Point](this) {
-    object x extends IntField(this)
-    object y extends IntField(this)
-  }
-  object f_list extends InnerField[Fields, List[Point]](this) {
-    object x extends IntField(this) {
-      override val entityName: String = "xxx"
-    }
-    object y extends IntField(this)
-  }
-
+object Fields extends SingleRecord {
+  def mt = meta[Fields]
 }
 
 class TestSimpleFields extends Spec {

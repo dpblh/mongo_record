@@ -28,6 +28,8 @@ trait Field[C, F] extends Make[C] {
 
 }
 
+abstract class MacroField[C, F](val collection: Make[C]) extends Field[C, F]
+
 trait ObjectField[C, F] extends Field[C, F] {
   val originName: String  = ReflectionRecord.getName(getClass)
   val entityName: String  = ReflectionRecord.camelToUnderscores(originName)
