@@ -36,6 +36,9 @@ object DBObjectSerializer {
     }
   }
 
+  def as[T]: T => Any = macro asDBObjectImpl[T]
+  def from[T]: Any => T = macro fromDBObjectImpl[T]
+
   def asDBObjectImpl[T: c.WeakTypeTag](c: Context) = {
     import c.universe._
     val tpe = weakTypeOf[T]

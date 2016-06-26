@@ -11,9 +11,9 @@ trait Query[R] {
   def execute:execute[R]
 }
 
-case class SelectQuery[R](c: M, s: SelectState[R], tag: Type) extends Query[R] {
+case class SelectQuery[R](c: M, s: SelectState[R]) extends Query[R] {
   override def toString =       selectQueryAsString(this)
-  override def execute  =        selectQuery(this)
+  override def execute  =       selectQuery(this)
 }
 
 case class JoinQuery[R](joined: JoinStateYield[R], collection: M) extends Query[R] {

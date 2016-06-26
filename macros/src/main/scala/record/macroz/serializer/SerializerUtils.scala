@@ -1,7 +1,7 @@
 package record.macroz.serializer
 
 import record.ReflectionRecord._
-
+import scala.language.experimental.macros
 import scala.reflect.macros.whitebox.Context
 
 /**

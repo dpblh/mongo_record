@@ -37,7 +37,7 @@ abstract class MetaTag[C: TypeTag] extends Make[C] {
   def where                               =  WhereQuery(WhereState(allExpression[C]()), this)
   def where(c1: it => Expression[C])      =  WhereQuery(WhereState(c1(this)), this)
 
-  def find[R](c1: it => SelectState[R])   =  SelectQuery[R](this, c1(this), runtimeClass)
+  def find[R](c1: it => SelectState[R])   =  SelectQuery[R](this, c1(this))
 
   def dynamic[F: TypeTag](field: String)  =  RuntimeField[C, F](field, this)
 

@@ -9,6 +9,6 @@ import scala.reflect.runtime.universe._
  */
 trait FromSignatures {
 
-  def from[T <: M, C, R](c: T)(c1: T => SelectState[R])(implicit ev1: TypeTag[C]): SelectQuery[R] = SelectQuery[R](c, c1(c), typeOf[C])
+  def from[T <: M, C, R](c: T)(c1: T => SelectState[R])(implicit ev1: TypeTag[C]): SelectQuery[R] = SelectQuery[R](c, c1(c))
 
 }
