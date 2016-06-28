@@ -10,29 +10,30 @@ import scala.reflect.macros.whitebox.Context
 object SerializerUtils {
 
   def getFieldNamesAndTypes(c: Context)(tpe: c.universe.Type):
-  Iterable[(c.universe.TermName, c.universe.Type)] = {
+  Iterable[(String, c.universe.TermName, c.universe.Type)] = {
     import c.universe._
 
-    object CaseField {
-      def unapply(trmSym: TermSymbol): Option[(TermName, Type)] = {
-        if (trmSym.isVal && trmSym.isCaseAccessor)
-          Some((TermName(trmSym.name.toString.trim), trmSym.typeSignature))
-        else
-          None
-      }
+    val fields = tpe.decls.collectFirst {
+      case m: MethodSymbol if m.isPrimaryConstructor ⇒ m
+    }.get.paramLists.head
+
+    fields.map { field =>
+      field.annotations.find(a => a.toString startsWith "record.macroz.serializer.entityNames")
+        .flatMap(_.tree.children.tail.headOption) match {
+          case Some(x) =>
+            val Literal(Constant(name)) = x
+            (name.toString, TermName(field.name.toString.trim), field.typeSignature)
+          case None =>  (field.name.toString.trim, TermName(field.name.toString.trim), field.typeSignature)
+        }
     }
 
-    tpe.decls.collect {
-      case CaseField(nme, tpe) =>
-        (nme, tpe)
-    }
   }
 
   def fieldGenerator(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type): c.Tree = {
     import c.universe._
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
-      val (name, typ) = p
+      val (entity, name, typ) = p
       fieldGenerator(c)(parentTpe, name, typ)
     }.toList
 
@@ -63,7 +64,7 @@ object SerializerUtils {
     val entityName = camelToUnderscores(originName)
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
-      val (name, typ) = p
+      val (entity, name, typ) = p
       fieldGenerator(c)(tpe, name, typ)
     }.toList
 

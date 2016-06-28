@@ -99,8 +99,8 @@ object scalaz {
     val companion = tpe.typeSymbol.companionSymbol
 
     val caseParams = getFieldNamesAndTypes(c)(tpe) map { tupl =>
-      val (name, returnType) = tupl
-      q"${fromDBObject(c)(returnType, q"$root.asInstanceOf[com.mongodb.BasicDBObject].get(${name.decoded})")}.asInstanceOf[$returnType]"
+      val (entity, name, returnType) = tupl
+      q"${fromDBObject(c)(returnType, q"$root.asInstanceOf[com.mongodb.BasicDBObject].get($entity)")}.asInstanceOf[$returnType]"
     }
     q"$companion(..$caseParams)"
   }

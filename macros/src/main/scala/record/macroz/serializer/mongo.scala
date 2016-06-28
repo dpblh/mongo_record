@@ -15,9 +15,9 @@ object mongo {
     import c.universe._
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
-      val (name, typ) = p
+      val (entity, name, typ) = p
       val value = asDBObject(c)(typ, Select(root, TermName(name.decodedName.toString)))
-      q"builder.append(${name.toString}, $value)"
+      q"builder.append($entity, $value)"
     }
 
     q"""{

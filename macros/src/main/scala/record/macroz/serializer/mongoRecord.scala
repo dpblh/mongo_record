@@ -23,13 +23,27 @@ object mongoRecordImpl {
     def modifiedDeclaration(classDef: ClassDef, compDeclOpt: Option[ModuleDef] = None): c.Expr[Any] = {
       val className = classDef.name.toTermName
 
-      val originName = classDef.name.encoded
-      val entityName = camelToUnderscores(originName)
-
       var fields = getFieldNamesAndTypes(c)(classDef).map { p =>
         val (name, typ) = p
         fieldGenerator(c)(classDef, name, typ)
       }
+
+
+      val (cln, params, bases, body, originName, entityName) = classDef match {
+        case q"@entityNames(..$annotate) case class $cln(..$params) extends ..$bases { ..$body }" =>
+
+          val AssignOrNamedArg(Ident(TermName("name")), Literal(Constant(name))) = annotate.head
+
+          val originName = classDef.name.encoded
+          val entityName = name.toString
+
+          (cln, params, bases, body, originName, entityName)
+        case q"case class $cln(..$params) extends ..$bases { ..$body }" =>
+          val originName = classDef.name.encoded
+          val entityName = camelToUnderscores(originName)
+          (cln, params, bases, body, originName, entityName)
+      }
+
 
       val texFields = Seq(
         q"private val as = asDBO[${classDef.name}]",
@@ -73,8 +87,6 @@ object mongoRecordImpl {
            """
       }
 
-
-      val q"case class $cln(..$params) extends ..$bases { ..$body }" = classDef
 
       val newC =
         q"""case class $cln(..$params) extends ..$bases {
