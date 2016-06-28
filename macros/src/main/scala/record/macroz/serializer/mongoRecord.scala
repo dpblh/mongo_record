@@ -31,7 +31,7 @@ object mongoRecordImpl {
         fieldGenerator(c)(classDef, name, typ)
       }
 
-      fields = fields ++ Seq(
+      val texFields = Seq(
         q"private val as = asDBO[${classDef.name}]",
         q"private val from = fromDBO[${classDef.name}]",
 
@@ -47,10 +47,19 @@ object mongoRecordImpl {
         val extractor = q"object C extends record.MetaTag[${classDef.name}]"
         val q"object C extends $rec" = extractor
 
+        //filter exists fields
+        fields = fields.collect {
+          case field@ModuleDef(_, TermName(y), _) if !body.collectFirst {
+            case x@ModuleDef(_, TermName(y1), _) if y == y1 => x
+          }.isDefined => field
+
+        }
+
         q"""
             object $obj extends $rec {
               import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$body
+              ..$texFields
               ..$fields
             }
           """
@@ -58,6 +67,7 @@ object mongoRecordImpl {
         q"""
             object $className extends record.MetaTag[${classDef.name}] {
               import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
+              ..$texFields
               ..$fields
             }
            """

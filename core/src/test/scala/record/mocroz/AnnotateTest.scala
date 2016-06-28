@@ -12,8 +12,11 @@ import com.mongodb.util.JSON._
 
 @mongoRecord case class Clazz2(x: String)
 @mongoRecord case class Point2(x: Int, clazz: Clazz2)
-object Point2 {
+object Point2 extends Meta {
   val one = 1
+  object x extends StringField(this) {
+    override val entityName = "x_1"
+  }
 }
 
 class AnnotateTest extends Spec {
@@ -26,6 +29,7 @@ class AnnotateTest extends Spec {
   println(Clazz2.asDBObject(Clazz2("12312313")))
 
   println(Point2.one)
+  println(Point2.x)
   println(Point2(2, Clazz2("3")).save())
   println(Point2.asDBObject(Point2(2, Clazz2("3"))))
   println(Point2.fromDBObject(parse("""{ "x" : 2 , "clazz" : { "x" : "3"}}""")))
