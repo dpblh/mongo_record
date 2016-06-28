@@ -28,22 +28,21 @@ object mongoRecordImpl {
         fieldGenerator(c)(classDef, name, typ)
       }
 
+      val originName = classDef.name.encoded
 
-      val (cln, params, bases, body, originName, entityName) = classDef match {
-        case q"@entityNames(..$annotate) case class $cln(..$params) extends ..$bases { ..$body }" =>
-
-          val AssignOrNamedArg(Ident(TermName("name")), Literal(Constant(name))) = annotate.head
-
-          val originName = classDef.name.encoded
-          val entityName = name.toString
-
-          (cln, params, bases, body, originName, entityName)
-        case q"case class $cln(..$params) extends ..$bases { ..$body }" =>
-          val originName = classDef.name.encoded
-          val entityName = camelToUnderscores(originName)
-          (cln, params, bases, body, originName, entityName)
+      val entityName = classDef.mods.annotations.collect {
+        case q"new entityNames(name = ${Literal(Constant(name))})" => name.toString
+      }.headOption match {
+        case Some(x) => x
+        case None => camelToUnderscores(originName)
       }
 
+      val (cln, params, bases, body) = classDef match {
+        case q"@entityNames(..$annotate) case class $cln(..$params) extends ..$bases { ..$body }" =>
+          (cln, params, bases, body)
+        case q"case class $cln(..$params) extends ..$bases { ..$body }" =>
+          (cln, params, bases, body)
+      }
 
       val texFields = Seq(
         q"private val as = asDBO[${classDef.name}]",
