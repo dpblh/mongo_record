@@ -21,27 +21,21 @@ object mongoRecordImpl {
     import c.universe._
 
     def modifiedDeclaration(classDef: ClassDef, compDeclOpt: Option[ModuleDef] = None): c.Expr[Any] = {
-      val className = classDef.name.toTermName
 
-      var fields = getFieldNamesAndTypes(c)(classDef).map { p =>
-        val (name, typ) = p
+      val q"$mods class $cln(..$params) extends ..$bases { ..$body }" = classDef
+      val originName = cln.encodedName.toString
+      val className = cln.toTermName
+
+      val fields = params.map { p =>
+        val (name, typ) = (p.name, p.tpt)
         fieldGenerator(c)(classDef, name, typ)
       }
 
-      val originName = classDef.name.encoded
-
-      val entityName = classDef.mods.annotations.collect {
+      val entityName = mods.annotations.collect {
         case q"new entityNames(name = ${Literal(Constant(name))})" => name.toString
       }.headOption match {
         case Some(x) => x
         case None => camelToUnderscores(originName)
-      }
-
-      val (cln, params, bases, body) = classDef match {
-        case q"@entityNames(..$annotate) case class $cln(..$params) extends ..$bases { ..$body }" =>
-          (cln, params, bases, body)
-        case q"case class $cln(..$params) extends ..$bases { ..$body }" =>
-          (cln, params, bases, body)
       }
 
       val texFields = Seq(
@@ -56,20 +50,11 @@ object mongoRecordImpl {
       )
 
       val compDecl = compDeclOpt map { compDecl =>
-        val q"object $obj extends ..$bases { ..$body }" = compDecl
-        val extractor = q"object C extends record.MetaTag[${classDef.name}]"
-        val q"object C extends $rec" = extractor
 
-        //filter exists fields
-        fields = fields.collect {
-          case field@ModuleDef(_, TermName(y), _) if !body.collectFirst {
-            case x@ModuleDef(_, TermName(y1), _) if y == y1 => x
-          }.isDefined => field
-
-        }
+        val q"object $obj extends ..$_ { ..$body }" = compDecl
 
         q"""
-            object $obj extends $rec {
+            object $obj extends ${AppliedTypeTree(Select(Ident(TermName("record")), TypeName("MetaTag")), List(Ident(TypeName("Point2"))))} {
               import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$body
               ..$texFields
@@ -87,15 +72,15 @@ object mongoRecordImpl {
       }
 
 
-      val newC =
-        q"""case class $cln(..$params) extends ..$bases {
+      val classDecl =
+        q"""$mods class $cln(..$params) extends ..$bases {
             ..$body
             def save() = $className.insert(this)
            }"""
 
       c.Expr(
         q"""
-          $newC
+          $classDecl
           $compDecl
         """
       )

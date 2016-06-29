@@ -12,14 +12,7 @@ object SerializerUtils {
   def getFieldNamesAndTypes(c: Context)(classDef: c.universe.Tree): List[(c.universe.TermName, c.universe.Tree)] = {
     import c.universe._
     classDef match {
-      case q"@entityNames(..$annotate) case class $className(..$fields) extends ..$bases { ..$body }" =>
-        fields.map { f =>
-          (f.name, f.tpt)
-        }
-      case q"case class $className(..$fields) extends ..$bases { ..$body }" =>
-        fields.map { f =>
-          (f.name, f.tpt)
-        }
+      case q"$_ class $_(..$params) extends ..$_ { ..$_ }" => params.map(p => (p.name, p.tpt))
       case _ => Nil
     }
 
