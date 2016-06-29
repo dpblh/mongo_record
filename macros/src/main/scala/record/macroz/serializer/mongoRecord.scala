@@ -26,7 +26,7 @@ object mongoRecordImpl {
       val originName = cln.encodedName.toString
       val className = cln.toTermName
 
-      val fields = params.map { p =>
+      val objects = params.map { p =>
         val (name, typ) = (p.name, p.tpt)
         fieldGenerator(c)(classDef, name, typ)
       }
@@ -54,11 +54,11 @@ object mongoRecordImpl {
         val q"object $obj extends ..$_ { ..$body }" = compDecl
 
         q"""
-            object $obj extends ${AppliedTypeTree(Select(Ident(TermName("record")), TypeName("MetaTag")), List(Ident(TypeName("Point2"))))} {
+            object $obj extends ${AppliedTypeTree(Select(Ident(TermName("record")), TypeName("MetaTag")), List(Ident(classDef.name)))} {
               import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$body
               ..$texFields
-              ..$fields
+              ..$objects
             }
           """
       } getOrElse {
@@ -66,7 +66,7 @@ object mongoRecordImpl {
             object $className extends record.MetaTag[${classDef.name}] {
               import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$texFields
-              ..$fields
+              ..$objects
             }
            """
       }
