@@ -19,5 +19,9 @@ trait MongoRecord
   type Meta[C] = ObjectMetaTag[C]
 
   def meta[T]: MetaTag[T] = macro SerializerUtils.metaGenerator[T]
+  object mongo {
+    def from[T]: Any => T = macro macroz.serializer.DBObjectSerializer.fromDBObjectImpl[T]
+    def as[T]: T => Any = macro macroz.serializer.DBObjectSerializer.asDBObjectImpl[T]
+  }
 
 }

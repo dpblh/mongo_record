@@ -1,12 +1,10 @@
 package record.macroz.serializer
 
-import record.macroz.paradise.SerializerUtils._
-
-import scala.language.experimental.macros
-import scala.annotation.compileTimeOnly
-import scala.reflect.macros._
-import scala.annotation.StaticAnnotation
 import record.ReflectionRecord._
+
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.language.experimental.macros
+import scala.reflect.macros._
 
 /**
  * Created by tim on 25.06.16.
@@ -28,7 +26,7 @@ object mongoRecordImpl {
 
       val objects = params.map { p =>
         val tpe2 = c.typecheck(tree = q"??? : ${p.tpt}", withMacrosDisabled = true).tpe
-        record.macroz.serializer.SerializerUtils.fieldGenerator2(c)(classDef.name.toTypeName, p.name, tpe2)
+        fieldGenerator(c)(classDef.name.toTypeName, p.name, tpe2)
       }
 
       val entityName = mods.annotations.collect {
@@ -39,8 +37,8 @@ object mongoRecordImpl {
       }
 
       val texFields = Seq(
-        q"private val as = asDBO[${classDef.name}]",
-        q"private val from = fromDBO[${classDef.name}]",
+        q"private val as = mongo.as[${classDef.name}]",
+        q"private val from = mongo.from[${classDef.name}]",
 
         q"override def asDBObject(c: Any):Any = as(c.asInstanceOf[${classDef.name}])",
         q"override def fromDBObject(c: Any):${classDef.name} = from(c)",
@@ -55,7 +53,6 @@ object mongoRecordImpl {
 
         q"""
             object $obj extends ${AppliedTypeTree(Select(Ident(TermName("record")), TypeName("MetaTag")), List(Ident(classDef.name)))} {
-              import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$body
               ..$texFields
               ..$objects
@@ -64,7 +61,6 @@ object mongoRecordImpl {
       } getOrElse {
         q"""
             object $className extends record.MetaTag[${classDef.name}] {
-              import record.macroz.serializer.DBObjectSerializer.{as => asDBO, from => fromDBO}
               ..$texFields
               ..$objects
             }
@@ -93,4 +89,31 @@ object mongoRecordImpl {
     }
 
   }
+
+  def fieldGenerator(c: whitebox.Context)(parentTpe: c.universe.TypeName, name: c.universe.Name, tpe: c.universe.Type): c.Tree = {
+    import c.universe._
+
+    val fields = SerializerUtils.getFieldNamesAndTypes(c)(tpe).map { p =>
+      val (entity, name, typ) = p
+      fieldGenerator(c)(parentTpe, name, typ)
+    }.toList
+
+    val asDBObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
+    val fromBDObjectBody = DBObjectSerializer.fromDBObject(c)(tpe, q"c")
+
+    q"""object ${TermName(name.encoded)} extends record.MacroField[$parentTpe, $tpe](this) {
+          override def fromDBObject(c: Any): Any = {
+            $fromBDObjectBody
+          }
+          override def asDBObject(c: Any): Any = {
+            val root = c.asInstanceOf[$tpe]
+            $asDBObjectBody
+          }
+          override val originName: String = ${name.encoded}
+          override val entityName: String = ${camelToUnderscores(name.encoded)}
+       ..$fields
+       }"""
+
+  }
+
 }
