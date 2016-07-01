@@ -27,8 +27,8 @@ object mongoRecordImpl {
       val className = cln.toTermName
 
       val objects = params.map { p =>
-        val (name, typ) = (p.name, p.tpt)
-        fieldGenerator(c)(classDef, name, typ)
+        val tpe2 = c.typecheck(tree = q"??? : ${p.tpt}", withMacrosDisabled = true).tpe
+        record.macroz.serializer.SerializerUtils.fieldGenerator2(c)(classDef.name.toTypeName, p.name, tpe2)
       }
 
       val entityName = mods.annotations.collect {

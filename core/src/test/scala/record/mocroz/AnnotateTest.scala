@@ -27,6 +27,7 @@ class AnnotateTest extends Spec {
 
   println(Point2.one)
   println(Point2.x)
+  println(Point2.clazz.x)
   println(Point2(2, Clazz2("3")).save())
   println(Point2.asDBObject(Point2(2, Clazz2("3"))))
   println(Point2.fromDBObject(parse("""{ "xxx" : 2 , "clazz3" : { "x" : "3"}}""")))
