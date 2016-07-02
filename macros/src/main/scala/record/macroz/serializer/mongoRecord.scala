@@ -26,7 +26,11 @@ object mongoRecordImpl {
 
       val objects = params.map { p =>
         val tpe2 = c.typecheck(tree = q"??? : ${p.tpt}", withMacrosDisabled = true).tpe
-        fieldGenerator(c)(classDef.name.toTypeName, p.name, tpe2)
+        val entity = SerializerUtils.getMongoKeyFromModes(c)(p.mods) match {
+          case Some(x) => x
+          case None => camelToUnderscores(p.name.encodedName.toString)
+        }
+        fieldGenerator(c)(classDef.name.toTypeName, p.name, tpe2, entity)
       }
 
       val entityName = mods.annotations.collect {
@@ -90,12 +94,12 @@ object mongoRecordImpl {
 
   }
 
-  def fieldGenerator(c: whitebox.Context)(parentTpe: c.universe.TypeName, name: c.universe.Name, tpe: c.universe.Type): c.Tree = {
+  def fieldGenerator(c: whitebox.Context)(parentTpe: c.universe.TypeName, name: c.universe.Name, tpe: c.universe.Type, entityName: String): c.Tree = {
     import c.universe._
 
     val fields = SerializerUtils.getFieldNamesAndTypes(c)(tpe).map { p =>
       val (entity, name, typ) = p
-      fieldGenerator(c)(parentTpe, name, typ)
+      fieldGenerator(c)(parentTpe, name, typ, entity)
     }.toList
 
     val asDBObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
@@ -110,8 +114,8 @@ object mongoRecordImpl {
             $asDBObjectBody
           }
           override val originName: String = ${name.encoded}
-          override val entityName: String = ${camelToUnderscores(name.encoded)}
-       ..$fields
+          override val entityName: String = $entityName
+          ..$fields
        }"""
 
   }

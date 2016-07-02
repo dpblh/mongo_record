@@ -36,6 +36,13 @@ object SerializerUtils {
     }
   }
 
+  def getMongoKeyFromModes(c: whitebox.Context)(mods: c.universe.Modifiers):Option[String] = {
+    import c.universe._
+    mods.annotations.collect {
+      case q"new entityName(name = ${Literal(Constant(name))})" => name.toString
+    }.headOption
+  }
+
   def fieldGenerator(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type): c.Tree = {
     import c.universe._
 
