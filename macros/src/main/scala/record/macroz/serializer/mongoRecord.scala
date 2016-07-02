@@ -30,7 +30,7 @@ object mongoRecordImpl {
       }
 
       val entityName = mods.annotations.collect {
-        case q"new entityNames(name = ${Literal(Constant(name))})" => name.toString
+        case q"new entityName(name = ${Literal(Constant(name))})" => name.toString
       }.headOption match {
         case Some(x) => x
         case None => camelToUnderscores(originName)

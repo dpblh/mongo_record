@@ -2,7 +2,7 @@ package record.mocroz
 
 import record.imports._
 import record.Spec
-import record.macroz.serializer.{entityNames, mongoRecord}
+import record.macroz.serializer.{entityName, mongoRecord}
 import com.mongodb.util.JSON._
 
 /**
@@ -10,8 +10,8 @@ import com.mongodb.util.JSON._
  */
 
 
-@mongoRecord @entityNames(name = "clazz3") case class Clazz2(x: String)
-@mongoRecord case class Point2(@entityNames(name = "xxx") x: Int, @entityNames(name = "clazz3")clazz: Clazz2)
+@mongoRecord @entityName(name = "clazz3") case class Clazz2(x: String)
+@mongoRecord case class Point2(@entityName(name = "xxx") x: Int, @entityName(name = "clazz3")clazz: Clazz2)
 object Point2 extends Meta {
   val one = 3
 }
