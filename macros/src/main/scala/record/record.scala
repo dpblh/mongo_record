@@ -3,7 +3,7 @@ import record.signatures._
 package object record {
 
   private [record] type M = MetaTag[_]
-  private [record] type Mk = Make[_]
+  private [record] type Mk = MakeRuntime[_]
   private [record] val setExpression = classOf[SetState[_,_]]
   private [record] val minExpression = classOf[MinState[_]]
   private [record] val maxExpression = classOf[MaxState[_]]

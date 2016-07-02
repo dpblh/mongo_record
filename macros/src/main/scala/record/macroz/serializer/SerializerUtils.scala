@@ -32,7 +32,7 @@ object SerializerUtils {
     field.annotations.find(a => a.toString startsWith "record.macroz.serializer.entityName")
       .flatMap(_.tree.children.tail.headOption) match {
       case Some(Literal(Constant(name)))  => name.toString
-      case None                           => field.name.toString.trim
+      case None                           => camelToUnderscores(field.name.toString.trim)
     }
   }
 
@@ -43,12 +43,12 @@ object SerializerUtils {
     }.headOption
   }
 
-  def fieldGenerator(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type): c.Tree = {
+  def fieldGenerator(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type, entityName: String): c.Tree = {
     import c.universe._
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (entity, name, typ) = p
-      fieldGenerator(c)(parentTpe, name, typ)
+      fieldGenerator(c)(parentTpe, name, typ, entity)
     }.toList
 
     val asDBObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
@@ -63,7 +63,7 @@ object SerializerUtils {
             $asDBObjectBody
           }
           override val originName: String = ${name.encoded}
-          override val entityName: String = ${camelToUnderscores(name.encoded)}
+          override val entityName: String = ${entityName}
        ..$fields
        }"""
 
@@ -74,12 +74,11 @@ object SerializerUtils {
 
     val tpe = weakTypeOf[T]
 
-    val originName = tpe.typeSymbol.name.encoded
-    val entityName = camelToUnderscores(originName)
+    val entityName = getMongoKey(c)(tpe.typeSymbol)
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
       val (entity, name, typ) = p
-      fieldGenerator(c)(tpe, name, typ)
+      fieldGenerator(c)(tpe, name, typ, entity)
     }.toList
 
     val asBDObjectBody = DBObjectSerializer.asDBObject(c)(tpe, q"root")
@@ -94,7 +93,6 @@ object SerializerUtils {
           $fromBDObjectBody
         }
         override val entityName:String = $entityName
-        override val originName:String = $originName
        ..$fields
        }"""
 

@@ -17,7 +17,7 @@ object ReflectionRecord {
 
   def camelToUnderscores(name: String) = name.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z\\d])([A-Z])", "$1_$2").toLowerCase
 
-  def getMetaFields(clazz: Class[_]):Map[String, Make[_]] = {
+  def getMetaFields(clazz: Class[_]):Map[String, MakeRuntime[_]] = {
     val mirror = runtimeMirror(getClass.getClassLoader)
 
     mirror
@@ -25,7 +25,7 @@ object ReflectionRecord {
       .toType
       .members
       .filter(_.isModule)
-      .map { m => mirror.reflectModule(m.asModule).instance.asInstanceOf[Make[_]] }
+      .map { m => mirror.reflectModule(m.asModule).instance.asInstanceOf[MakeRuntime[_]] }
       .map { d => (d.originName, d) }
       .toMap
   }

@@ -2,12 +2,13 @@ package record.mocroz.fields
 
 import record.imports._
 import record.Spec
+import record.macroz.serializer.entityName
 
 /**
  * Created by tim on 01.06.16.
  */
 case class Point(x: Int, y: Int)
-case class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long, f_string: String, f_float: Float,  f_byte: Byte,  f_byte_array: Array[Byte],  f_big_int: BigInt, f_bid_decimal: BigDecimal, f_date: java.util.Date, f_calendar: java.util.Calendar, f_option: Option[Point], f_list: List[Point]) {
+@entityName(name = "fields_new") case  class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long, f_string: String, f_float: Float,  f_byte: Byte,  f_byte_array: Array[Byte],  f_big_int: BigInt, f_bid_decimal: BigDecimal, f_date: java.util.Date, f_calendar: java.util.Calendar, f_option: Option[Point], f_list: List[Point]) {
   def save(): Unit = Fields.insert(this).flash
 }
 object Fields extends SingleRecord {

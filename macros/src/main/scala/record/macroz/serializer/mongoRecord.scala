@@ -47,7 +47,6 @@ object mongoRecordImpl {
         q"override def asDBObject(c: Any):Any = as(c.asInstanceOf[${classDef.name}])",
         q"override def fromDBObject(c: Any):${classDef.name} = from(c)",
 
-        q"override val originName: String = $originName",
         q"override val entityName: String = $entityName"
       )
 

@@ -6,16 +6,19 @@ import scala.reflect.runtime.universe._
 /**
  * Created by tim on 21.05.16.
  */
-trait Make[C] {
+trait Make[c] {
   def asDBObject(c: Any):Any
   def fromDBObject(dbo: Any):Any
+  val entityName:String
+}
+
+trait MakeRuntime[C] extends Make[C] {
 
   val originName:String
-  val entityName:String
 
   //TODO concurrency variable
-  var fields:Map[String, Make[_]] = null
-  def getField(field: String):Make[_] = {
+  var fields:Map[String, MakeRuntime[_]] = null
+  def getField(field: String):MakeRuntime[_] = {
     if (fields == null) {
       fields = ReflectionRecord.getMetaFields(getClass)
     }
@@ -24,8 +27,7 @@ trait Make[C] {
 
 }
 
-abstract class MetaTag[C: TypeTag] extends Make[C] {
-
+trait MetaTag[C] extends Make[C] {
   type it = this.type
 
   def isValid(c: C):Boolean = true
@@ -42,6 +44,9 @@ abstract class MetaTag[C: TypeTag] extends Make[C] {
   def dynamic[F: TypeTag](field: String)  =  RuntimeField[C, F](field, this)
 
   override def toString = entityName
+}
+
+abstract class MetaTagRuntime[C: TypeTag] extends MetaTag[C] with MakeRuntime[C] {
 
   def asDBObject(c: Any):Any              =  DBObjectSerializer.asDBObject(c, runtimeClass, Some(this))
   def fromDBObject(dbo: Any):C            =  DBObjectSerializer.fromDBObject(dbo, runtimeClass, Some(this)).asInstanceOf[C]
@@ -49,7 +54,7 @@ abstract class MetaTag[C: TypeTag] extends Make[C] {
 
 }
 
-abstract class ObjectMetaTag[C: TypeTag] extends MetaTag[C] {
+abstract class ObjectMetaTag[C: TypeTag] extends MetaTagRuntime[C] {
   override val originName:String = ReflectionRecord.getName(getClass)
   override val entityName:String = ReflectionRecord.camelToUnderscores(originName)
 }
