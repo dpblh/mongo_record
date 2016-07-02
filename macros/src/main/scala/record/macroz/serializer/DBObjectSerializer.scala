@@ -1,7 +1,7 @@
 package record.macroz.serializer
 
 import scala.language.experimental.macros
-import scala.reflect.macros.whitebox.Context
+import scala.reflect.macros.whitebox
 
 /**
  * Created by tim on 10.06.16.
@@ -10,7 +10,7 @@ object DBObjectSerializer {
 
   case class DBObjectSerializerException(msg: String) extends RuntimeException(msg)
 
-  def fromDBObject(c: Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
+  def fromDBObject(c: whitebox.Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
     import c.universe._
     tpe match {
       case x if scalaz.isSimpleType(c)(x)     => q"${scalaz.asSimpleType(c)(x, name)}"
@@ -23,7 +23,7 @@ object DBObjectSerializer {
     }
   }
 
-  def asDBObject(c: Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
+  def asDBObject(c: whitebox.Context)(tpe: c.universe.Type, name: c.Tree): c.Tree = {
     import c.universe._
     tpe match {
       case x if scalaz.isSimpleType(c)(tpe)       => q"${mongo.asSimpleType(c)(tpe, name)}"
@@ -36,19 +36,15 @@ object DBObjectSerializer {
     }
   }
 
-  def as[T]: T => Any = macro asDBObjectImpl[T]
-  def from[T]: Any => T = macro fromDBObjectImpl[T]
-
-  def asDBObjectImpl[T: c.WeakTypeTag](c: Context) = {
+  def mongo_mapper[T: c.WeakTypeTag](c: whitebox.Context) = {
     import c.universe._
     val tpe = weakTypeOf[T]
-    q"(c: $tpe) => ${asDBObject(c)(tpe, q"c")}"
-  }
-
-  def fromDBObjectImpl[T: c.WeakTypeTag](c: Context) = {
-    import c.universe._
-    val tpe = weakTypeOf[T]
-    q"(c: Any) => ${fromDBObject(c)(tpe, q"c")}.asInstanceOf[$tpe]"
+    q"""
+       new Mapper[$tpe] {
+        def to(e: $tpe):Any = ${asDBObject(c)(tpe, q"e")}
+        def from(o: Any):$tpe = ${fromDBObject(c)(tpe, q"o")}
+       }
+     """
   }
 
 }

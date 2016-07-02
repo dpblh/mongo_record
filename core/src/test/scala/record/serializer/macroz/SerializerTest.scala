@@ -1,8 +1,6 @@
 package record.serializer.macroz
 import record.Spec
-import record.macroz.serializer.DBObjectSerializer._
-
-import scala.language.experimental.macros
+import record.imports._
 
 /**
  * Created by tim on 09.05.16.
@@ -18,36 +16,34 @@ case class Fields(f_double: Double, f_boolean: Boolean, f_int: Int, f_long: Long
 
 class SerializerTest extends Spec {
 
-  def asDBObject[T]: T => Any = macro asDBObjectImpl[T]
+  mapper[Int].to(123) shouldBe 123
+  mapper[String].to("string") shouldBe "string"
+  mapper[Long].to(1l) shouldBe 1l
+  mapper[Double].to(1d) shouldBe 1d
+  mapper[Float].to(1f) shouldBe 1f
+  mapper[Byte].to(1.toByte) shouldBe 1.toByte
+  mapper[BigInt].to(BigInt(1)) shouldBe 1.toString
+  mapper[BigDecimal].to(BigDecimal(1)) shouldBe 1.toString
+  mapper[Boolean].to(true) shouldBe true
+  mapper[Array[Byte]].to(Array(1.toByte, 2.toByte)) shouldBe Array(1.toByte, 2.toByte)
+  yes(mapper[List[String]].to(Nil).toString, "[]")
+  yes(mapper[List[String]].to("string" :: Nil).toString, """["string"]""")
+  yes(mapper[Seq[String]].to(Nil).toString, "[]")
+  yes(mapper[Set[String]].to(Set()).toString, "[]")
+  yes(mapper[Map[String, String]].to(Map("string" -> "string")).toString, """{ "string" : "string" }""")
 
-  asDBObject[Int](123) shouldBe 123
-  asDBObject[String]("string") shouldBe "string"
-  asDBObject[Long](1l) shouldBe 1l
-  asDBObject[Double](1d) shouldBe 1d
-  asDBObject[Float](1f) shouldBe 1f
-  asDBObject[Byte](1.toByte) shouldBe 1.toByte
-  asDBObject[BigInt](BigInt(1)) shouldBe 1.toString
-  asDBObject[BigDecimal](BigDecimal(1)) shouldBe 1.toString
-  asDBObject[Boolean](true) shouldBe true
-  asDBObject[Array[Byte]](Array(1.toByte, 2.toByte)) shouldBe Array(1.toByte, 2.toByte)
-  yes(asDBObject[List[String]](Nil).toString, "[]")
-  yes(asDBObject[List[String]]("string" :: Nil).toString, """["string"]""")
-  yes(asDBObject[Seq[String]](Nil).toString, "[]")
-  yes(asDBObject[Set[String]](Set()).toString, "[]")
-  yes(asDBObject[Map[String, String]](Map("string" -> "string")).toString, """{ "string" : "string" }""")
-
-  asDBObject[Option[String]](None).asInstanceOf[AnyRef] should equal(null)
-  asDBObject[Option[String]](Some("string")) shouldBe "string"
+  mapper[Option[String]].to(None).asInstanceOf[AnyRef] should equal(null)
+  mapper[Option[String]].to(Some("string")) shouldBe "string"
 
   val current_date = new java.util.Date()
-  asDBObject[java.util.Date](current_date) shouldBe current_date.getTime
+  mapper[java.util.Date].to(current_date) shouldBe current_date.getTime
   val current_calendar = java.util.Calendar.getInstance()
-  asDBObject[java.util.Calendar](current_calendar) shouldBe current_calendar.getTimeInMillis
+  mapper[java.util.Calendar].to(current_calendar) shouldBe current_calendar.getTimeInMillis
 
-  yes(asDBObject[Address](Address("Kal", "Tver")).toString, """{ "region" : "Kal", "city" : "Tver" }""")
-  yes(asDBObject[Person](Person("tim", 23, Address("Kal", "Tver"))).toString, """{ "name" : "tim" , "age" : 23 , "address" : { "region" : "Kal" , "city" : "Tver"}}""")
+  yes(mapper[Address].to(Address("Kal", "Tver")).toString, """{ "region" : "Kal", "city" : "Tver" }""")
+  yes(mapper[Person].to(Person("tim", 23, Address("Kal", "Tver"))).toString, """{ "name" : "tim" , "age" : 23 , "address" : { "region" : "Kal" , "city" : "Tver"}}""")
 
-  yes(asDBObject[Fields](
+  yes(mapper[Fields].to(
     Fields(
       1.1,
       f_boolean = true,

@@ -40,11 +40,10 @@ object mongoRecordImpl {
       }
 
       val texFields = Seq(
-        q"private val as = mongo.as[${classDef.name}]",
-        q"private val from = mongo.from[${classDef.name}]",
+        q"private val mp = mapper[${classDef.name}]",
 
-        q"override def asDBObject(c: Any):Any = as(c.asInstanceOf[${classDef.name}])",
-        q"override def fromDBObject(c: Any):${classDef.name} = from(c)",
+        q"override def asDBObject(c: Any):Any = mp.to(c.asInstanceOf[${classDef.name}])",
+        q"override def fromDBObject(c: Any):${classDef.name} = mp.from(c)",
 
         q"override val entityName: String = $entityName"
       )
