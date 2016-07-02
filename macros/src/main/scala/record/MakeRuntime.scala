@@ -14,8 +14,6 @@ trait Make[c] {
 
 trait MakeRuntime[C] extends Make[C] {
 
-  val originName:String
-
   //TODO concurrency variable
   var fields:Map[String, MakeRuntime[_]] = null
   def getField(field: String):MakeRuntime[_] = {
@@ -55,6 +53,5 @@ abstract class MetaTagRuntime[C: TypeTag] extends MetaTag[C] with MakeRuntime[C]
 }
 
 abstract class ObjectMetaTag[C: TypeTag] extends MetaTagRuntime[C] {
-  override val originName:String = ReflectionRecord.getName(getClass)
-  override val entityName:String = ReflectionRecord.camelToUnderscores(originName)
+  override val entityName:String = ReflectionRecord.getNameAsUnderscores(getClass)
 }

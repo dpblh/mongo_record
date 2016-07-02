@@ -21,7 +21,6 @@ object mongoRecordImpl {
     def modifiedDeclaration(classDef: ClassDef, compDeclOpt: Option[ModuleDef] = None): c.Expr[Any] = {
 
       val q"$mods class $cln(..$params) extends ..$bases { ..$body }" = classDef
-      val originName = cln.encodedName.toString
       val className = cln.toTermName
 
       val objects = params.map { p =>
@@ -37,7 +36,7 @@ object mongoRecordImpl {
         case q"new entityName(name = ${Literal(Constant(name))})" => name.toString
       }.headOption match {
         case Some(x) => x
-        case None => camelToUnderscores(originName)
+        case None => camelToUnderscores(cln.encodedName.toString)
       }
 
       val texFields = Seq(
@@ -112,7 +111,6 @@ object mongoRecordImpl {
             val root = c.asInstanceOf[$tpe]
             $asDBObjectBody
           }
-          override val originName: String = ${name.encoded}
           override val entityName: String = $entityName
           ..$fields
        }"""

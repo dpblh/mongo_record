@@ -62,8 +62,7 @@ object SerializerUtils {
             val root = c.asInstanceOf[$tpe]
             $asDBObjectBody
           }
-          override val originName: String = ${name.encoded}
-          override val entityName: String = ${entityName}
+          override val entityName: String = $entityName
        ..$fields
        }"""
 

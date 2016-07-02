@@ -26,7 +26,7 @@ object ReflectionRecord {
       .members
       .filter(_.isModule)
       .map { m => mirror.reflectModule(m.asModule).instance.asInstanceOf[MakeRuntime[_]] }
-      .map { d => (d.originName, d) }
+      .map { d => (getNameAsUnderscores(clazz), d) }
       .toMap
   }
 

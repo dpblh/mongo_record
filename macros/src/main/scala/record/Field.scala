@@ -9,7 +9,6 @@ import scala.reflect.runtime.universe._
 trait Field[C, F] extends Make[C] {
 
   val collection: Make[C]
-  val originName:String
 
   def ===[C1](joined: Field[C1, F])           =   JoinOne(this, joined)
   def <<[C1](joined: Field[C1, F])            =   JoinMany(this, joined)
@@ -34,8 +33,7 @@ trait FieldRuntime[C,F] extends Field[C,F] with MakeRuntime[C]
 abstract class MacroField[C, F](val collection: Make[C]) extends Field[C, F]
 
 trait ObjectField[C, F] extends FieldRuntime[C, F] {
-  val originName: String  = ReflectionRecord.getName(getClass)
-  val entityName: String  = ReflectionRecord.camelToUnderscores(originName)
+  val entityName: String  = ReflectionRecord.getNameAsUnderscores(getClass)
 }
 
 trait BaseFields {
@@ -101,7 +99,6 @@ trait BaseFields {
   }
 }
 case class RuntimeField[C, F](override val entityName: String, collection: Make[C])(implicit tuo: TypeTag[F]) extends FieldRuntime[C, F] {
-  override val originName: String = entityName
   override def asDBObject(c: Any): Any            = DBObjectSerializer.asDBObject(c, runtimeClass, None)
   override def fromDBObject(dbo: Any): F          = DBObjectSerializer.fromDBObject(dbo, runtimeClass, None).asInstanceOf[F]
   def runtimeClass: Type = typeOf[F]
