@@ -2,7 +2,8 @@ package record.e2e.annotation
 
 import record.Spec
 import record.imports._
-import record.macroz.serializer.{entityName, mongoRecord}
+import record.mongoRecord
+import record.entityName
 
 /**
  * Created by tim on 25.06.16.

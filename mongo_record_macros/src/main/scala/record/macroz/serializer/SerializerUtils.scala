@@ -29,7 +29,7 @@ object SerializerUtils {
 
   def getMongoKey(c: whitebox.Context)(field: c.universe.Symbol):String = {
     import c.universe._
-    field.annotations.find(a => a.toString startsWith "record.macroz.serializer.entityName")
+    field.annotations.find(a => a.toString startsWith "record.entityName")
       .flatMap(_.tree.children.tail.headOption) match {
       case Some(Literal(Constant(name)))  => name.toString
       case None                           => camelToUnderscores(field.name.toString.trim)

@@ -1,8 +1,7 @@
 package record.e2e.fields
 
-import record.Spec
 import record.imports._
-import record.macroz.serializer.entityName
+import record.{Spec, entityName}
 
 /**
  * Created by tim on 01.06.16.
