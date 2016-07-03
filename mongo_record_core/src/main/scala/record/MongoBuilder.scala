@@ -1,6 +1,6 @@
 package record
 
-import com.mongodb.{BasicDBList, BasicDBObject, DBObject, BasicDBObjectBuilder}
+import com.mongodb.{BasicDBList, BasicDBObject, BasicDBObjectBuilder, DBObject}
 import record.signatures._
 
 /**

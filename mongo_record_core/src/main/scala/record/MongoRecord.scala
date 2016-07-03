@@ -16,12 +16,4 @@ trait MongoRecord
 
   type Meta[C] = ObjectMetaTag[C]
 
-//  def meta[T]: MetaTag[T] = macro SerializerUtils.metaGenerator[T]
-//  def mapper[T]: Mapper[T] = macro mongo_mapper[T]
-
-//  trait Mapper[T] {
-//    def to(e: T):Any
-//    def from(o: Any):T
-//  }
-
 }

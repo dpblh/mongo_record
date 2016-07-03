@@ -2,6 +2,7 @@ package record
 
 import record.runtime.serializer.DBObjectSerializer
 import record.signatures._
+
 import scala.reflect.runtime.universe._
 /**
  * Created by tim on 21.05.16.

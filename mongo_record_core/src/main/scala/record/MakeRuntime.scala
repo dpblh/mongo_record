@@ -2,6 +2,7 @@ package record
 
 import record.runtime.serializer.DBObjectSerializer
 import record.signatures._
+
 import scala.reflect.runtime.universe._
 /**
  * Created by tim on 21.05.16.
@@ -10,19 +11,6 @@ trait Make[C] {
   def asDBObject(c: Any):Any
   def fromDBObject(dbo: Any):Any
   val entityName:String
-}
-
-trait MakeRuntime[C] extends Make[C] {
-
-  //TODO concurrency variable
-  var fields:Map[String, MakeRuntime[_]] = null
-  def getField(field: String):MakeRuntime[_] = {
-    if (fields == null) {
-      fields = ReflectionRecord.getMetaFields(getClass)
-    }
-    fields.getOrElse(field, RuntimeField(field, this))
-  }
-
 }
 
 trait MetaTag[C] extends Make[C] {
@@ -42,6 +30,19 @@ trait MetaTag[C] extends Make[C] {
   def dynamic[F: TypeTag](field: String)  =  RuntimeField[C, F](field, this)
 
   override def toString = entityName
+}
+
+trait MakeRuntime[C] extends Make[C] {
+
+  //TODO concurrency variable
+  var fields:Map[String, MakeRuntime[_]] = null
+  def getField(field: String):MakeRuntime[_] = {
+    if (fields == null) {
+      fields = ReflectionRecord.getMetaFields(getClass)
+    }
+    fields.getOrElse(field, RuntimeField(field, this))
+  }
+
 }
 
 abstract class MetaTagRuntime[C: TypeTag] extends MetaTag[C] with MakeRuntime[C] {

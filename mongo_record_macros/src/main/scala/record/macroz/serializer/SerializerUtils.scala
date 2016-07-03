@@ -1,8 +1,8 @@
 package record.macroz.serializer
 
 import record.ReflectionRecord._
+
 import scala.language.experimental.macros
-import scala.reflect.macros.whitebox.Context
 import scala.reflect.macros.whitebox
 
 /**
@@ -10,7 +10,7 @@ import scala.reflect.macros.whitebox
  */
 object SerializerUtils {
 
-  def getFieldNamesAndTypes(c: Context)(tpe: c.universe.Type):
+  def getFieldNamesAndTypes(c: whitebox.Context)(tpe: c.universe.Type):
   Iterable[(String, c.universe.TermName, c.universe.Type)] = {
     import c.universe._
 
@@ -43,7 +43,7 @@ object SerializerUtils {
     }.headOption
   }
 
-  def fieldGenerator(c: Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type, entityName: String): c.Tree = {
+  def fieldGenerator(c: whitebox.Context)(parentTpe: c.universe.Type, name: c.universe.Name, tpe: c.universe.Type, entityName: String): c.Tree = {
     import c.universe._
 
     val fields = getFieldNamesAndTypes(c)(tpe).map { p =>
@@ -68,7 +68,7 @@ object SerializerUtils {
 
   }
 
-  def metaGenerator[T: c.WeakTypeTag](c: Context) = {
+  def metaGenerator[T: c.WeakTypeTag](c: whitebox.Context) = {
     import c.universe._
 
     val tpe = weakTypeOf[T]

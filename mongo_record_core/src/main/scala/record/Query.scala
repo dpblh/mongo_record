@@ -1,9 +1,8 @@
 package record
 
-import record.signatures._
-import scala.reflect.runtime.universe._
-import record.MongoBuilder._
 import com.mongodb.DBObject
+import record.MongoBuilder._
+import record.signatures._
 /**
  * Created by tim on 09.05.16.
  */

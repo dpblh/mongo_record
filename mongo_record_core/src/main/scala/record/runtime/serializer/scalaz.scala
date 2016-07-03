@@ -3,8 +3,8 @@ package record.runtime.serializer
 import java.util.{Calendar, Date}
 
 import com.mongodb.{BasicDBList, BasicDBObject}
-import record.{UtilsRecord, _}
 import record.runtime.serializer.DBObjectSerializer._
+import record.{UtilsRecord, _}
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.universe._
