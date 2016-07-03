@@ -22,34 +22,37 @@ object MyBuild extends Build {
     "root",
     file("."),
     settings = buildSettings ++ Seq(
-      run <<= run in Compile in core
+      run <<= run in Compile in mongo_record_macros
     )
-  ) aggregate(macros, core, migration)
+  ) aggregate(mongo_record_macros, mongo_record_core, migration)
 
-  lazy val macros: Project = Project(
-    "macros",
-    file("macros"),
+  lazy val mongo_record_macros: Project = Project(
+    "mongo_record_macros",
+    file("mongo_record_macros"),
     settings = buildSettings ++ Seq(
       libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-        "org.mongodb" % "casbah_2.11" % "2.8.0"
+        "org.mongodb" % "casbah_2.11" % "2.8.0",
+        "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
       ),
       libraryDependencies ++= (
         if (scalaVersion.value.startsWith("2.10")) List("org.scalamacros" %% "quasiquotes" % paradiseVersion)
         else Nil
       )
     )
-  )
+  ) dependsOn mongo_record_core
 
-  lazy val core: Project = Project(
-    "core",
-    file("core"),
+  lazy val mongo_record_core: Project = Project(
+    "mongo_record_core",
+    file("mongo_record_core"),
     settings = buildSettings ++ Seq(
       libraryDependencies ++= Seq(
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        "org.mongodb" % "casbah_2.11" % "2.8.0",
         "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
       )
     )
-  ) dependsOn(macros)
+  )
 
   lazy val migration: Project = Project(
     "migration",
