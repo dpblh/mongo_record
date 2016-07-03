@@ -2,18 +2,12 @@ package record.macroz.serializer
 
 import record.ReflectionRecord._
 
-import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
 import scala.reflect.macros._
 
 /**
  * Created by tim on 25.06.16.
  */
-@compileTimeOnly("enable macro paradise to expand macro annotations")
-class mongoRecord extends StaticAnnotation {
-  def macroTransform(annottees: Any*): Any = macro mongoRecordImpl.impl
-}
-
 object mongoRecordImpl {
   def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
