@@ -1,30 +1,25 @@
-package record.macroz.single
+package record.e2e.annotation
 
 import record.Spec
 import record.imports._
+import record.macroz.serializer.{entityName, mongoRecord}
+
 /**
- * Created by tim on 09.05.16.
+ * Created by tim on 25.06.16.
  */
 
-case class Address(region: String, city: String)
-case class Person(name: String, age: Int, address: Address) {
-  def save = Person.insert(this).flash
-}
+@mongoRecord case class Address(region: String, city: String)
+@mongoRecord @entityName(name = "person_no_conflict2") case class Person(name: String, @entityName(name = "old") age: Int, address: Address)
 
-
-object Person extends SingleRecord {
-  def mt = meta[Person]
-}
-
-class SingleTest extends Spec {
+class AnnotateTest extends Spec {
 
   Person.where.remove
 
-  Person("tim", 23, Address("Kal", "Tver")).save
-  Person("tim", 24, Address("Kal", "Tver")).save
-  Person("tim", 27, Address("Kal", "Tver")).save
-  Person("klava", 28, Address("Kal", "Tver")).save
-  Person.insert(Person("tim", 25, Address("Kalinin", "Tver"))).flash
+  Person("tim", 23, Address("Kal", "Tver")).save.flash
+  Person("tim", 24, Address("Kal", "Tver")).save.flash
+  Person("tim", 27, Address("Kal", "Tver")).save.flash
+  Person("klava", 28, Address("Kal", "Tver")).save.flash
+  Person("tim", 25, Address("Kalinin", "Tver")).save.flash
 
   Person.find { p =>
     where(p.dynamic("name") === "tim") select p

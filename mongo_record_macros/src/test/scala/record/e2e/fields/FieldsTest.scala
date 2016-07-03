@@ -1,8 +1,7 @@
-package record.macroz.fields
+package record.e2e.fields
 
-import record.{imports, Spec}
-import imports._
-import record.{imports, Spec}
+import record.Spec
+import record.imports._
 import record.macroz.serializer.entityName
 
 /**
@@ -16,7 +15,7 @@ object Fields extends SingleRecord {
   def mt = meta[Fields]
 }
 
-class TestSimpleFields extends Spec {
+class FieldsTest extends Spec {
 
   Fields.where.remove
 

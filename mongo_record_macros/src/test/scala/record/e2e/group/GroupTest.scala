@@ -1,4 +1,4 @@
-package record.macroz.group
+package record.e2e.group
 
 import record.imports._
 import record.{MongoRecordMacro, Spec}
