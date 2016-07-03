@@ -1,7 +1,7 @@
-package record.e2e
+package record.e2e.single
 
-import record.{imports, Spec}
-import imports._
+import record.Spec
+import record.imports._
 /**
  * Created by tim on 09.05.16.
  */
@@ -24,7 +24,7 @@ object Person extends Meta[Person] {
 
 }
 
-class E2ETest extends Spec {
+class SingleTest extends Spec {
 
   Person.where.remove
 

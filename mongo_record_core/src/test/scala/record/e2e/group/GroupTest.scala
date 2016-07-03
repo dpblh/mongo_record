@@ -1,20 +1,21 @@
-package record.e2e
+package record.e2e.group
 
-import record.{imports, MongoRecord, Spec}
-import imports._
+import record.imports._
+import record.{MongoRecord, Spec}
 /**
  * Created by tim on 17.05.16.
  */
 case class Patient(id: String, snils: String, address_id: String)
-case class Address2(id: String, street: String)
+case class Address(id: String, street: String)
 case class PersonalData(person_id: String, firstName: String, lastName: String)
+
 object Patient extends MongoRecord {
   object patient extends Meta[Patient] {
     object id extends StringField(this)
     object snils extends IntField(this)
     object address_id extends StringField(this)
   }
-  object address extends Meta[Address2] {
+  object address extends Meta[Address] {
     object id extends StringField(this)
     object street extends StringField(this)
   }
@@ -27,7 +28,7 @@ object Patient extends MongoRecord {
   def init():Unit = {
 
     address.where.remove
-    address.insert(Address2("1", "K")).flash
+    address.insert(Address("1", "K")).flash
 
     patient.where.remove
     patient.insert(Patient("tim", "123", "1")).flash
@@ -52,16 +53,16 @@ object Patient extends MongoRecord {
 
 }
 
-class E2EGroupTest extends Spec {
+class GroupTest extends Spec {
 
   Patient.init()
 
-  Patient.allInfo.fetch.foreach {println}
+  Patient.allInfo.fetch.length shouldBe 2
 
-  Patient.hashMany.fetch.foreach {println}
+  Patient.hashMany.fetch.length shouldBe 2
 
-  Patient.triple.fetch.foreach {println}
+  Patient.triple.fetch.length shouldBe 2
 
-  Patient.triple.fetchOne.foreach {println}
+  yes(Patient.triple.fetchOne, (Patient("tim","123","1"),List(PersonalData("tim","tim","bay"), PersonalData("tim","tim","bay")),Some(Address("1","K"))))
 
 }

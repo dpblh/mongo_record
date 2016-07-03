@@ -1,23 +1,23 @@
-package record.macroz
+package record.macroz.group
 
-import record.{imports, MongoRecordMacro, Spec}
-import imports._
+import record.imports._
+import record.{MongoRecordMacro, Spec}
 /**
  * Created by tim on 17.05.16.
  */
 case class Patient(id: String, snils: String, address_id: String)
-case class Address2(id: String, street: String)
+case class Address(id: String, street: String)
 case class PersonalData(person_id: String, firstName: String, lastName: String)
 object Patient extends MongoRecordMacro {
 
   def patient = meta[Patient]
-  def address = meta[Address2]
+  def address = meta[Address]
   def personalData = meta[PersonalData]
 
   def init():Unit = {
 
     address.where.remove
-    address.insert(Address2("1", "K")).flash
+    address.insert(Address("1", "K")).flash
 
     patient.where.remove
     patient.insert(Patient("tim", "123", "1")).flash
@@ -42,16 +42,16 @@ object Patient extends MongoRecordMacro {
 
 }
 
-class E2EGroupTest extends Spec {
+class GroupTest extends Spec {
 
   Patient.init()
 
-  Patient.allInfo.fetch.foreach {println}
+  Patient.allInfo.fetch.length shouldBe 2
 
-  Patient.hashMany.fetch.foreach {println}
+  Patient.hashMany.fetch.length shouldBe 2
 
-  Patient.triple.fetch.foreach {println}
+  Patient.triple.fetch.length shouldBe 2
 
-  Patient.triple.fetchOne.foreach {println}
+  yes(Patient.triple.fetchOne, (Patient("tim","123","1"),List(PersonalData("tim","tim","bay"), PersonalData("tim","tim","bay")),Some(Address("1","K"))))
 
 }

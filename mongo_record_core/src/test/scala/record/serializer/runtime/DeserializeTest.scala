@@ -1,16 +1,14 @@
 package record.serializer.runtime
 
+import com.mongodb.util.JSON._
 import record.Spec
 import record.runtime.serializer.DBObjectSerializer._
-import com.mongodb.util.JSON._
 
 /**
  * Created by tim on 12.06.16.
  */
 case class IntroPoint(x: Point, y: Point)
 class DeserializeTest extends Spec {
-
-//  def fromDBObject[T]: Any => T = macro fromDBObjectImpl[T]
 
   fromDBObject[Int](parse("123")) shouldBe 123
   fromDBObject[String](parse( """ "string" """)) shouldBe "string"

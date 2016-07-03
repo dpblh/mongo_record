@@ -1,7 +1,7 @@
-package record.use_cases.single
+package record.string.builder.single
 
-import record.{imports, Spec}
-import imports._
+import record.Spec
+import record.imports._
 /**
  * Created by tim on 22.04.16.
  */

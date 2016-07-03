@@ -1,8 +1,7 @@
-package record.use_cases.inner_class
+package record.string.builder.inner_class
 
 import record._
-import imports._
-import record._
+import record.imports._
 /**
  * Created by tim on 25.04.16.
  */

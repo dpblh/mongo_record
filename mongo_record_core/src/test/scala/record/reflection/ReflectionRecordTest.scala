@@ -1,4 +1,6 @@
-package record
+package record.reflection
+
+import record.{ReflectionRecord, Spec}
 
 /**
  * Created by tim on 02.06.16.

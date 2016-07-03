@@ -1,7 +1,7 @@
-package record.macroz
+package record.macroz.single
 
-import record.{imports, Spec}
-import imports._
+import record.Spec
+import record.imports._
 /**
  * Created by tim on 09.05.16.
  */
@@ -16,7 +16,7 @@ object Person extends SingleRecord {
   def mt = meta[Person]
 }
 
-class E2ETest extends Spec {
+class SingleTest extends Spec {
 
   Person.where.remove
 

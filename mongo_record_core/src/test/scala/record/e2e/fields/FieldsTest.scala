@@ -1,8 +1,7 @@
-package record.fields
+package record.e2e.fields
 
-import record.{imports, Spec}
-import imports._
-import record.{imports, Spec}
+import record.Spec
+import record.imports._
 
 /**
  * Created by tim on 01.06.16.
@@ -40,7 +39,7 @@ object Fields extends Meta[Fields] {
 
 }
 
-class TestSimpleFields extends Spec {
+class FieldsTest extends Spec {
 
   Fields.where.remove
 

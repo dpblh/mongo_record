@@ -1,8 +1,8 @@
 package record.serializer.macroz
 
-import record.{imports, Spec}
-import imports._
 import com.mongodb.util.JSON._
+import record.Spec
+import record.imports._
 
 /**
  * Created by tim on 12.06.16.

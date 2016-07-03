@@ -1,4 +1,4 @@
-package record.e2e.macro_annotate
+package record.e2e
 
 import record.Spec
 import record.imports._
