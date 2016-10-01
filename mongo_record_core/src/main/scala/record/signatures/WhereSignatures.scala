@@ -96,7 +96,7 @@ case class WhereState[C](c: Expression[C]) extends ModifyState[C] {
 
 
   def on[C1, F](f: => Join[C,C1,F]) = JoinStateYield1(c, f)
-  def on[C1, C2, F](f1: => Join[C,C1,F], f2: => Join[_,C2,F]) = JoinStateYield2(c, f1, f2)
+  def on[C1, C2, F](f1: => Join[C,C1,F], f2: => Join[C,C2,F]) = JoinStateYield2(c, f1, f2)
 
 }
 
